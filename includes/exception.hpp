@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 11:09:53 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/17 15:02:49 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/17 16:39:00 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,14 @@ class glfwError : public exception {
 class openGlError : public exception {
 	public:
 		explicit openGlError(const std::string& m) : _msg(m) {}
+		const char* what() const noexcept override { return _msg.c_str(); }
+	private :
+		string _msg;
+};
+
+class openClError : public exception {
+	public:
+		explicit openClError(const std::string& m) : _msg(m) {}
 		const char* what() const noexcept override { return _msg.c_str(); }
 	private :
 		string _msg;

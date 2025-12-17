@@ -6,13 +6,15 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/17 16:13:04 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/17 16:41:42 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
 #include <string>
+#include <Cl/cl.h>
+
 
 #define GLFW_INCLUDE_NONE
 #include <glad/glad.h>
@@ -44,8 +46,15 @@ class ParticleSystem {
 	private:
 		size_t _nbParticle;
 
+		// OpenGl
 		GLuint _posBuffer;
 		GLuint _velBuffer;
 		GLuint _colorBuffer;
-		
+
+		// OpenCl
+		cl_context _clContext;
+		cl_command_queue _clQueue;
+		cl_mem _clPosBuffer;
+		cl_mem _clVelBuffer;
+		cl_mem _clColBuffer;
 };
