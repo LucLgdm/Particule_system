@@ -6,16 +6,17 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/17 16:46:38 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/18 13:48:48 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ParticleSystem.hpp"
 
 // Constructeur
-ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _nbParticle(num) {
+ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(1.0f), _nbParticle(num) {
 	createBuffers();			// glGenBuffers && glBufferData
 	registerInterop();		// clCreateFromGLBuffer
+	createKernel();
 	if (shape == "sphere")	// GPU Kernel
 		initializeSphere();
 	else
@@ -25,8 +26,9 @@ ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _nbParticl
 ParticleSystem::~ParticleSystem() {}
 
 void ParticleSystem::createBuffers() {
+	// NUmber of particles, each particle stores 4 float, a vect4(x, y, z, w)
 	const std::size_t bufferSize = _nbParticle * sizeof(float) * 4;
-	
+
 	glGenBuffers(1, &_posBuffer); 				// 1 is for the number of buffer object
 	glBindBuffer(GL_ARRAY_BUFFER, _posBuffer);	// Vertex attributes
 	glBufferData(GL_ARRAY_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
@@ -58,17 +60,17 @@ void ParticleSystem::registerInterop() {
 	clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, nullptr);
 
 	cl_int err;
-	_context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &err);
+	_clContext = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &err);
 	
 	// Create OpenCl memory object from GL Buffers
 	// This makes VRAM buffers visible to OpenCL
-	_clPosBuffer = clCreateFromGLBuffer(_context, CL_MEM_READ_WRITE, _posBuffer, &err);
+	_clPosBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _posBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create position buffer\033[0m");
 
-	_clVelBuffer = clCreateFromGLBuffer(_context, CL_MEM_READ_WRITE, _velBuffer, &err);
+	_clVelBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _velBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create velocity buffer\033[0m");
 
-	_clColBuffer = clCreateFromGLBuffer(_context, CL_MEM_READ_WRITE, _colorBuffer, &err);
+	_clColBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _colorBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create color buffer\033[0m");
 
 	// Create the command queue: all OpenCL operations must be submitted here
@@ -78,8 +80,79 @@ void ParticleSystem::registerInterop() {
 
 }
 
-void ParticleSystem::initializeSphere() {
+void ParticleSystem::createKernel() {
+	// Take the .cl file
+	std::ifstream file("kernels.cl");
+	std::string src((std::istreambuf_iterator<char>(file)),
+					std::istreambuf_iterator<char>());
+	const char* src_cstr = src.c_str();
+
+	// Create and build the cl_program
+	cl_int err;
+	_clProgram = clCreateProgramWithSource(_clContext, 1, &src_cstr, nullptr, &err);
+	if (err != CL_SUCCESS)
+		throw openClError("   \033[33mFailed to create cl program\033[0m");
+
+	cl_device_id device;
+	clGetContextInfo(_clContext, CL_CONTEXT_DEVICES, sizeof(device), &device, nullptr);
+
+	err = clBuildProgram(_clProgram, 1, &device, nullptr, nullptr, nullptr);
+	if (err != CL_SUCCESS) {
+    // Get build log
+		size_t log_size;
+		clGetProgramBuildInfo(_clProgram, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &log_size);
+		std::vector<char> log(log_size);
+		clGetProgramBuildInfo(_clProgram, device, CL_PROGRAM_BUILD_LOG, log_size, log.data(), nullptr);
+		std::cerr << "Build log:\n" << log.data() << std::endl;
+		
+		throw openClError("   \033[33mFailed to build OpenCL program\033[0m");
+	}
+}
+
+void ParticleSystem::setKernel() {
+	cl_int err;
 	
+	// Buffer arguments
+	err  = clSetKernelArg(_initSphereKernel, 0, sizeof(cl_mem), &_clPosBuffer);
+	err |= clSetKernelArg(_initSphereKernel, 1, sizeof(cl_mem), &_clVelBuffer);
+	err |= clSetKernelArg(_initSphereKernel, 2, sizeof(cl_mem), &_clVelBuffer);
+	
+	// Other data
+	err |= clSetKernelArg(_initSphereKernel, 3, sizeof(size_t), &_nbParticle);
+	err |= clSetKernelArg(_initSphereKernel, 4, sizeof(float), &_radius);
+
+	if (err != CL_SUCCESS)
+		throw openClError("   \033[33mFailed to set kernel arguments\033[0m");
+}
+
+// Aquires the OpenGl buffers for OpenCl access
+// Launches an OpenCl kernel tha writes directly into OpenGl buffers
+// Release the buffers back to OpenGl
+void ParticleSystem::initializeSphere() {
+	// 1 Aquiring OpenGl buffers
+	cl_int err;
+	cl_mem buffer[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
+	err = clEnqueueAcquireGLObjects(_clQueue, 3, buffer, 0, nullptr, nullptr);
+	if (err != CL_SUCCESS)
+		throw openClError("    \033[33mCan't aquire GL Objects\0330m");
+
+	// 2 Set kernel arguments
+	_initSphereKernel = clCreateKernel(_clProgram, "initSphere", &err);
+	if (err != CL_SUCCESS)
+		throw openClError("    \033[33mFailed to create kernel\033[0m");
+	
+	setKernel();
+
+	// 3 Launch kernel
+	clEnqueueNDRangeKernel(_clQueue, _initSphereKernel, 1,
+		nullptr, &_nbParticle, nullptr, 0, nullptr, nullptr);
+	
+	// 4 Release buffers back to OpenGl
+	clEnqueueReleaseGLObjects(_clQueue, 3, buffer, 0, nullptr, nullptr);
+
+	// 5. Ensure completion before rendering
+	clFinish(_clQueue);
+
 }
 
 void ParticleSystem::initializeCube() {

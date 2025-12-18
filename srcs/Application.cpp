@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/17 15:55:19 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/18 13:51:08 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ void Application::init(int argc, char **argv) {
 	
 	initGLFW();
 	initOpenGL();
+	
 }
 
 void Application::checkinput(int argc, char **argv) {
@@ -81,7 +82,7 @@ void Application::initGLFW() {
 void Application::initOpenGL() {
 	// Charger les fonctions OpenGL avec Glad
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-		throw openGlError("Failed to initialize GLAD");
+		throw openGlError("   \033[33mFailed to initialize GLAD\033[0m");
 	
 	// Configuration OpenGL
 	glViewport(0, 0, WIDTH, HEIGHT);

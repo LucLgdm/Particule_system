@@ -6,14 +6,14 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/18 10:18:17 by lde-merc          #+#    #+#              #
-#    Updated: 2025/12/17 16:48:04 by lde-merc         ###   ########.fr        #
+#    Updated: 2025/12/18 11:03:44 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 # Compiler
 CPP      = g++
-FLAGS    = -MMD -g -std=c++17 -I includes/
-LDFLAGS  = -lglfw -lGL -lOpenCL
+FLAGS    = -MMD -g -std=c++17 -I includes/ -I$(HOME)/local/include
+LDFLAGS  = -L/usr/lib/x86_64-linux-gnu -l:libOpenCL.so.1 -lglfw -lGL
 
 # Sources
 vpath %.cpp srcs/

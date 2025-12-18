@@ -6,23 +6,30 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/17 16:41:42 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/18 13:37:28 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
-#include <string>
-#include <Cl/cl.h>
+#define CL_TARGET_OPENCL_VERSION 120
 
-
+// OpenGL
 #define GLFW_INCLUDE_NONE
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+// OpenCl
+#include <CL/cl.h>
+#include <CL/cl_gl.h>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+
+#include <string>
+#include <iostream>
+#include <fstream>
+#include "exception.hpp"
 
 class ParticleSystem {
 	public:
@@ -34,6 +41,8 @@ class ParticleSystem {
 
 		void createBuffers();
 		void registerInterop();
+		void createKernel();
+		void setKernel();
 		void initializeSphere();
 		void initializeCube();
 		
@@ -45,6 +54,8 @@ class ParticleSystem {
 		
 	private:
 		size_t _nbParticle;
+		float _radius;
+
 
 		// OpenGl
 		GLuint _posBuffer;
@@ -54,7 +65,11 @@ class ParticleSystem {
 		// OpenCl
 		cl_context _clContext;
 		cl_command_queue _clQueue;
+		cl_program _clProgram;
+			// memory
 		cl_mem _clPosBuffer;
 		cl_mem _clVelBuffer;
 		cl_mem _clColBuffer;
+			// kernel
+		cl_kernel _initSphereKernel;
 };
