@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/18 13:48:48 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/30 14:17:23 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,9 @@
 // Constructeur
 ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(1.0f), _nbParticle(num) {
 	createBuffers();			// glGenBuffers && glBufferData
-	registerInterop();		// clCreateFromGLBuffer
+	registerInterop();			// clCreateFromGLBuffer
 	createKernel();
-	if (shape == "sphere")	// GPU Kernel
+	if (shape == "sphere")		// GPU Kernel
 		initializeSphere();
 	else
 		initializeCube();
@@ -26,7 +26,7 @@ ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(1.
 ParticleSystem::~ParticleSystem() {}
 
 void ParticleSystem::createBuffers() {
-	// NUmber of particles, each particle stores 4 float, a vect4(x, y, z, w)
+	// Number of particles, each particle stores 4 float, a vect4(x, y, z, w)
 	const std::size_t bufferSize = _nbParticle * sizeof(float) * 4;
 
 	glGenBuffers(1, &_posBuffer); 				// 1 is for the number of buffer object
@@ -59,8 +59,27 @@ void ParticleSystem::registerInterop() {
 	cl_device_id device;
 	clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, nullptr);
 
-	cl_int err;
-	_clContext = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &err);
+	// Create context with OpenGL sharing
+    cl_context_properties properties[] = {
+		#ifdef __APPLE__
+				CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
+				(cl_context_properties)CGLGetShareGroup(CGLGetCurrentContext()),
+		#elif defined(_WIN32)
+				CL_GL_CONTEXT_KHR, (cl_context_properties)wglGetCurrentContext(),
+				CL_WGL_HDC_KHR, (cl_context_properties)wglGetCurrentDC(),
+				CL_CONTEXT_PLATFORM, (cl_context_properties)platform,
+		#else // Linux
+				CL_GL_CONTEXT_KHR, (cl_context_properties)glXGetCurrentContext(),
+				CL_GLX_DISPLAY_KHR, (cl_context_properties)glXGetCurrentDisplay(),
+				CL_CONTEXT_PLATFORM, (cl_context_properties)platform,
+		#endif
+				0
+	};
+    
+    cl_int err;
+    _clContext = clCreateContext(properties, 1, &device, nullptr, nullptr, &err);
+    if (err != CL_SUCCESS) throw openClError("Failed to create OpenCL context with GL sharing");
+
 	
 	// Create OpenCl memory object from GL Buffers
 	// This makes VRAM buffers visible to OpenCL
@@ -82,7 +101,10 @@ void ParticleSystem::registerInterop() {
 
 void ParticleSystem::createKernel() {
 	// Take the .cl file
-	std::ifstream file("kernels.cl");
+	std::ifstream file("./srcs/kernels.cl");
+	 if (!file.is_open())
+        throw openClError("Failed to open kernels.cl");
+	
 	std::string src((std::istreambuf_iterator<char>(file)),
 					std::istreambuf_iterator<char>());
 	const char* src_cstr = src.c_str();
@@ -112,6 +134,7 @@ void ParticleSystem::createKernel() {
 void ParticleSystem::setKernel() {
 	cl_int err;
 	
+	std::cout << "\033[33mSetting kernel arguments...\033[0m" << std::endl;
 	// Buffer arguments
 	err  = clSetKernelArg(_initSphereKernel, 0, sizeof(cl_mem), &_clPosBuffer);
 	err |= clSetKernelArg(_initSphereKernel, 1, sizeof(cl_mem), &_clVelBuffer);
@@ -123,6 +146,8 @@ void ParticleSystem::setKernel() {
 
 	if (err != CL_SUCCESS)
 		throw openClError("   \033[33mFailed to set kernel arguments\033[0m");
+	
+	std::cout << "\033[32mShape Kernel set succeffully !\033[0m" << std::endl;
 }
 
 // Aquires the OpenGl buffers for OpenCl access

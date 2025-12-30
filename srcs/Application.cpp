@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/18 13:51:08 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/30 13:55:49 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,10 +33,9 @@ Application &Application::operator=(const Application &other) {
 void Application::init(int argc, char **argv) {
 	checkinput(argc, argv);
 	
-	_system = std::make_unique<ParticleSystem>(_nbParticle, _shape);
-	
 	initGLFW();
 	initOpenGL();
+	_system = std::make_unique<ParticleSystem>(_nbParticle, _shape);
 	
 }
 
