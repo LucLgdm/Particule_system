@@ -1,28 +1,15 @@
 #version 330 core
 
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec3 aNormal;
-layout(location = 2) in vec2 aTex;
-layout(location = 3) in vec3 aColor;
-layout(location = 4) in float aHasTex;
+layout (location = 0) in vec4 aPos;
+layout (location = 1) in vec4 aColor;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-uniform vec3 lightPos;
+uniform mat4 uMVP;
 
-out vec2 TexCoord;
-out vec3 Color;
-flat out float HasTex;
-out vec3 Normal;
-out vec3 FragPos;
+out vec4 vColor;
 
-void main() {
-	
-	gl_Position = projection * view * model * vec4(aPos, 1.0);
-	FragPos = vec3(model * vec4(aPos, 1.0));
-	Normal = normalize(mat3(transpose(inverse(model))) * aNormal);
-	TexCoord = aTex;
-	Color = aColor;
-	HasTex = aHasTex;
+void main()
+{
+    gl_Position = uMVP * aPos;
+    vColor = aColor;
+	gl_PointSize = 2.0;
 }

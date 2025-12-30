@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/17 15:54:23 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/30 16:35:28 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ class Application {
 		Application &operator=(const Application &other);
 
 		void init(int, char **);
+		void initShader();
 		void run();
 		void cleanup();
 
@@ -43,6 +44,8 @@ class Application {
 		std::unique_ptr<ParticleSystem> _system; // More modern and safer: avoids leaks
 		int _nbParticle;
 		string _shape;
+
+		GLuint _shaderProgram;
 
 		void checkinput(int, char**);
 		void initGLFW();

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/30 14:01:31 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/30 16:25:08 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,10 +45,14 @@ class ParticleSystem {
 		void createBuffers();
 		void registerInterop();
 		void createKernel();
-		void setKernel();
-		void initializeSphere();
-		void initializeCube();
+		void setKernel(const std::string &);
+		void initializeShape(const std::string &);
 		
+		void setupRendering();
+		void render();
+
+		void acquireGLObjects();
+		void releaseGLObjects();
 		void update(float dt);
 
 		GLuint posBuffer() const { return _posBuffer; };
@@ -64,6 +68,8 @@ class ParticleSystem {
 		GLuint _posBuffer;
 		GLuint _velBuffer;
 		GLuint _colorBuffer;
+		GLuint _vao;
+		
 
 		// OpenCl
 		cl_context _clContext;
@@ -74,5 +80,5 @@ class ParticleSystem {
 		cl_mem _clVelBuffer;
 		cl_mem _clColBuffer;
 			// kernel
-		cl_kernel _initSphereKernel;
+		cl_kernel _initShape;
 };

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/30 14:17:23 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/30 17:38:47 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,11 +16,8 @@
 ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(1.0f), _nbParticle(num) {
 	createBuffers();			// glGenBuffers && glBufferData
 	registerInterop();			// clCreateFromGLBuffer
-	createKernel();
-	if (shape == "sphere")		// GPU Kernel
-		initializeSphere();
-	else
-		initializeCube();
+	createKernel();				// GPU Kernel
+	initializeShape(shape);		// Call the first kernel
 }
 
 ParticleSystem::~ParticleSystem() {}
@@ -131,18 +128,20 @@ void ParticleSystem::createKernel() {
 	}
 }
 
-void ParticleSystem::setKernel() {
+void ParticleSystem::setKernel(const std::string &shape) {
 	cl_int err;
-	
-	std::cout << "\033[33mSetting kernel arguments...\033[0m" << std::endl;
+	int flag = (shape == "sphere" ? 1 : 0);
+	std::cout << "\033[36mSetting kernel arguments...\033[0m" << std::endl;
 	// Buffer arguments
-	err  = clSetKernelArg(_initSphereKernel, 0, sizeof(cl_mem), &_clPosBuffer);
-	err |= clSetKernelArg(_initSphereKernel, 1, sizeof(cl_mem), &_clVelBuffer);
-	err |= clSetKernelArg(_initSphereKernel, 2, sizeof(cl_mem), &_clVelBuffer);
+	err  = clSetKernelArg(_initShape, 0, sizeof(cl_mem), &_clPosBuffer);
+	err |= clSetKernelArg(_initShape, 1, sizeof(cl_mem), &_clVelBuffer);
+	err |= clSetKernelArg(_initShape, 2, sizeof(cl_mem), &_clColBuffer);
 	
 	// Other data
-	err |= clSetKernelArg(_initSphereKernel, 3, sizeof(size_t), &_nbParticle);
-	err |= clSetKernelArg(_initSphereKernel, 4, sizeof(float), &_radius);
+	cl_uint nb = static_cast<cl_uint>(_nbParticle); // On evite de passer un size_t* a OpenCl, il ne connait pas
+	err |= clSetKernelArg(_initShape, 3, sizeof(cl_uint), &nb);
+	err |= clSetKernelArg(_initShape, 4, sizeof(float), &_radius);
+	err |= clSetKernelArg(_initShape, 5, sizeof(int), &flag);
 
 	if (err != CL_SUCCESS)
 		throw openClError("   \033[33mFailed to set kernel arguments\033[0m");
@@ -153,7 +152,7 @@ void ParticleSystem::setKernel() {
 // Aquires the OpenGl buffers for OpenCl access
 // Launches an OpenCl kernel tha writes directly into OpenGl buffers
 // Release the buffers back to OpenGl
-void ParticleSystem::initializeSphere() {
+void ParticleSystem::initializeShape(const std::string& shape) {
 	// 1 Aquiring OpenGl buffers
 	cl_int err;
 	cl_mem buffer[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
@@ -162,14 +161,14 @@ void ParticleSystem::initializeSphere() {
 		throw openClError("    \033[33mCan't aquire GL Objects\0330m");
 
 	// 2 Set kernel arguments
-	_initSphereKernel = clCreateKernel(_clProgram, "initSphere", &err);
+	_initShape = clCreateKernel(_clProgram, "initShape", &err);
 	if (err != CL_SUCCESS)
 		throw openClError("    \033[33mFailed to create kernel\033[0m");
 	
-	setKernel();
+	setKernel(shape);
 
 	// 3 Launch kernel
-	clEnqueueNDRangeKernel(_clQueue, _initSphereKernel, 1,
+	clEnqueueNDRangeKernel(_clQueue, _initShape, 1,
 		nullptr, &_nbParticle, nullptr, 0, nullptr, nullptr);
 	
 	// 4 Release buffers back to OpenGl
@@ -180,7 +179,41 @@ void ParticleSystem::initializeSphere() {
 
 }
 
-void ParticleSystem::initializeCube() {
+void ParticleSystem::setupRendering() {
+	// Create VAO
+	glGenVertexArrays(1, &_vao);
+	glBindVertexArray(_vao);
 	
+	// Bind position buffer
+	glBindBuffer(GL_ARRAY_BUFFER, _posBuffer);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glEnableVertexAttribArray(0);
+	
+	// Bind color buffer
+	glBindBuffer(GL_ARRAY_BUFFER, _colorBuffer);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glEnableVertexAttribArray(1);
+	
+	glBindVertexArray(0);
 }
 
+void ParticleSystem::render() {
+	glBindVertexArray(_vao);
+	glDrawArrays(GL_POINTS, 0, _nbParticle);
+	glBindVertexArray(0);
+}
+
+void ParticleSystem::acquireGLObjects() {
+	clEnqueueAcquireGLObjects(_clQueue, 1, &_clPosBuffer, 0, nullptr, nullptr);
+	clEnqueueAcquireGLObjects(_clQueue, 1, &_clColBuffer, 0, nullptr, nullptr);
+}
+
+void ParticleSystem::releaseGLObjects() {
+	clEnqueueReleaseGLObjects(_clQueue, 1, &_clPosBuffer, 0, nullptr, nullptr);
+	clEnqueueReleaseGLObjects(_clQueue, 1, &_clColBuffer, 0, nullptr, nullptr);
+	clFinish(_clQueue);
+}
+
+void ParticleSystem::update(float dt) {
+	
+}
