@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/30 16:25:08 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/31 11:54:09 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,4 +81,5 @@ class ParticleSystem {
 		cl_mem _clColBuffer;
 			// kernel
 		cl_kernel _initShape;
+		cl_kernel _updateSys;
 };

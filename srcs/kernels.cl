@@ -45,6 +45,23 @@ __kernel void initShape(
 
 	
 	colors[gid] = (float4)(0.2f, 0.5, 1.0f, 1.0f);
+}
 
+__kernel void update(
+	__global float4* positions,
+	__global float4* velocities,
+	const uint nbParticles,
+	const float dt,
+	const float4 gravity	
+)
+{
+	size_t gid = get_global_id(0);
+	if (gid >= nbParticles) return;
+
+	// Apply gravity
+	velocities[gid] += gravity * dt;
+
+	// update position
+	positions[gid] += velocities[gid] * dt;
 }
 

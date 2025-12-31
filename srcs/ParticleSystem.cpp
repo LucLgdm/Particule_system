@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/30 17:38:47 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/31 12:02:07 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -176,7 +176,6 @@ void ParticleSystem::initializeShape(const std::string& shape) {
 
 	// 5. Ensure completion before rendering
 	clFinish(_clQueue);
-
 }
 
 void ParticleSystem::setupRendering() {
@@ -205,15 +204,44 @@ void ParticleSystem::render() {
 
 void ParticleSystem::acquireGLObjects() {
 	clEnqueueAcquireGLObjects(_clQueue, 1, &_clPosBuffer, 0, nullptr, nullptr);
-	clEnqueueAcquireGLObjects(_clQueue, 1, &_clColBuffer, 0, nullptr, nullptr);
+	clEnqueueAcquireGLObjects(_clQueue, 1, &_clVelBuffer, 0, nullptr, nullptr);
 }
 
 void ParticleSystem::releaseGLObjects() {
 	clEnqueueReleaseGLObjects(_clQueue, 1, &_clPosBuffer, 0, nullptr, nullptr);
-	clEnqueueReleaseGLObjects(_clQueue, 1, &_clColBuffer, 0, nullptr, nullptr);
+	clEnqueueReleaseGLObjects(_clQueue, 1, &_clVelBuffer, 0, nullptr, nullptr);
 	clFinish(_clQueue);
 }
 
-void ParticleSystem::update(float dt) {
+void ParticleSystem::update(float dt) {	
+	// 1 Aquiring OpenGl buffers
+	cl_int err;
+	cl_mem buffer[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
+	err = clEnqueueAcquireGLObjects(_clQueue, 3, buffer, 0, nullptr, nullptr);
+	if (err != CL_SUCCESS)
+		throw openClError("    \033[33mCan't aquire GL Objects\0330m");
+
+	// 2 Set kernel arguments
+	_updateSys = clCreateKernel(_clProgram, "update", &err);
+	if (err != CL_SUCCESS)
+		throw openClError("    \033[33mFailed to create kernel\033[0m");
 	
+	err  = clSetKernelArg(_updateSys, 0, sizeof(cl_mem), &_clPosBuffer);
+	err |= clSetKernelArg(_updateSys, 1, sizeof(cl_mem), &_clVelBuffer);
+	
+	cl_uint nb = static_cast<cl_uint>(_nbParticle);
+	err |= clSetKernelArg(_updateSys, 2, sizeof(cl_uint), &nb);
+	err |= clSetKernelArg(_updateSys, 3, sizeof(float), &dt);
+	cl_float4 gravity = {0.0f, -9.8f, 0.0f, 0.0f};
+	err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravity);
+
+	// 3 Launch kernel
+	clEnqueueNDRangeKernel(_clQueue, _updateSys, 1,
+		nullptr, &_nbParticle, nullptr, 0, nullptr, nullptr);
+	
+	// 4 Release buffers back to OpenGl
+	clEnqueueReleaseGLObjects(_clQueue, 3, buffer, 0, nullptr, nullptr);
+
+	// 5. Ensure completion before rendering
+	clFinish(_clQueue);
 }

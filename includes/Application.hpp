@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/30 16:35:28 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/31 11:53:01 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ class Application {
 		std::unique_ptr<ParticleSystem> _system; // More modern and safer: avoids leaks
 		int _nbParticle;
 		string _shape;
+		float _lastTime;
 
 		GLuint _shaderProgram;
 

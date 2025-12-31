@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/30 17:24:43 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/31 12:00:50 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ Application &Application::operator=(const Application &other) {
 
 void Application::init(int argc, char **argv) {
 	checkinput(argc, argv);
+	_lastTime = 0.0f;
 	
 	initGLFW();
 	initOpenGL();
@@ -39,7 +40,6 @@ void Application::init(int argc, char **argv) {
 	_system->setupRendering();
 
 	initShader();
-
 }
 
 void Application::checkinput(int argc, char **argv) {
@@ -144,11 +144,13 @@ void Application::cleanup() {
 
 void Application::run() {
 	while (!glfwWindowShouldClose(_window)) {
-		float dt = 0.0f;
+		float currentTime = glfwGetTime();
+		float dt = currentTime - _lastTime;
+		_lastTime = currentTime;
 		// 1. OpenCL écrit → OpenGL lit
 		glFinish();
 		_system->acquireGLObjects();	// clEnqueueAcquireGLObjects
-		_system->update(dt);				// kernels OpenCL
+		_system->update(dt);			// kernels OpenCL
 		_system->releaseGLObjects();	// clEnqueueReleaseGLObjects
 		
 		// 2. OpenGL rend
