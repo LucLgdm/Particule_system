@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/31 11:53:01 by lde-merc         ###   ########.fr       */
+/*   Updated: 2025/12/31 13:39:53 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,9 +42,11 @@ class Application {
 	private:
 		GLFWwindow* _window;
 		std::unique_ptr<ParticleSystem> _system; // More modern and safer: avoids leaks
-		int _nbParticle;
-		string _shape;
-		float _lastTime;
+		int 	_nbParticle;
+		string 	_shape;
+		float 	_lastFrameTime;
+		float 	_lastFpsTime;
+		int		_fps;
 
 		GLuint _shaderProgram;
 

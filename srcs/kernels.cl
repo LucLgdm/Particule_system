@@ -55,6 +55,8 @@ __kernel void update(
 	const float4 gravity	
 )
 {
+	float speed = 2.0f;
+
 	size_t gid = get_global_id(0);
 	if (gid >= nbParticles) return;
 
@@ -62,6 +64,12 @@ __kernel void update(
 	velocities[gid] += gravity * dt;
 
 	// update position
-	positions[gid] += velocities[gid] * dt;
+	positions[gid] += velocities[gid] * dt * speed;
+
+	// Rebound on the ground
+	if (positions[gid].y < -0.9f) {
+        positions[gid].y = -0.9f;
+        velocities[gid].y *= -0.8f;
+    }
 }
 

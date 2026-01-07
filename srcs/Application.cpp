@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/31 12:00:50 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/07 13:40:36 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ Application &Application::operator=(const Application &other) {
 
 void Application::init(int argc, char **argv) {
 	checkinput(argc, argv);
-	_lastTime = 0.0f;
+	_lastFpsTime = 0.0f;
 	
 	initGLFW();
 	initOpenGL();
@@ -79,6 +79,7 @@ void Application::initGLFW() {
 		throw glfwError("Window creation failed");
 	
 	glfwMakeContextCurrent(_window);
+	glfwSwapInterval(1);
 }
 
 void Application::initOpenGL() {
@@ -143,15 +144,39 @@ void Application::cleanup() {
 }
 
 void Application::run() {
+	_lastFrameTime = glfwGetTime();
+	_lastFpsTime = _lastFrameTime;
+	
 	while (!glfwWindowShouldClose(_window)) {
 		float currentTime = glfwGetTime();
-		float dt = currentTime - _lastTime;
-		_lastTime = currentTime;
+		// dt OpenCl
+		float dt = currentTime - _lastFrameTime;
+		dt = std::min(dt, 0.02f);
+		_lastFrameTime = currentTime;
+		
+		// Fps
+		_fps++;
+        if (currentTime - _lastFpsTime >= 1.0)
+        {
+            double fps = _fps / (currentTime - _lastFpsTime);
+
+            std::string title =
+                "Particule system | FPS: " + std::to_string(int(fps));
+            glfwSetWindowTitle(_window, title.c_str());
+
+            _fps  = 0;
+            _lastFpsTime = currentTime;
+        }
+		
 		// 1. OpenCL écrit → OpenGL lit
-		glFinish();
-		_system->acquireGLObjects();	// clEnqueueAcquireGLObjects
-		_system->update(dt);			// kernels OpenCL
-		_system->releaseGLObjects();	// clEnqueueReleaseGLObjects
+		// glFinish();
+		// _system->acquireGLObjects();	// clEnqueueAcquireGLObjects
+		// _system->update(dt);			// kernels OpenCL
+		// _system->releaseGLObjects();	// clEnqueueReleaseGLObjects
+		
+		/* TEST */
+		_system->update(dt);
+		/* FIN TEST */
 		
 		// 2. OpenGL rend
 
@@ -165,7 +190,7 @@ void Application::run() {
 		);
 
 		glm::mat4 view = glm::lookAt(
-			glm::vec3(0.0f, 0.0f, 5.0f),  // caméra
+			glm::vec3(0.0f, 0.0f, 3.0f),  // caméra
 			glm::vec3(0.0f, 0.0f, 0.0f),  // centre
 			glm::vec3(0.0f, 1.0f, 0.0f)   // haut
 		);
@@ -183,6 +208,7 @@ void Application::run() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		_system->render();
+		glFlush();
 
 		glfwSwapBuffers(_window);
 		glfwPollEvents();
