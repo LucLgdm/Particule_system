@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/07 13:40:36 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/09 14:44:33 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ void Application::init(int argc, char **argv) {
 	_system->setupRendering();
 
 	initShader();
+	_imguiLayer.initImGui(_window);
 }
 
 void Application::checkinput(int argc, char **argv) {
@@ -155,31 +156,12 @@ void Application::run() {
 		_lastFrameTime = currentTime;
 		
 		// Fps
-		_fps++;
-        if (currentTime - _lastFpsTime >= 1.0)
-        {
-            double fps = _fps / (currentTime - _lastFpsTime);
-
-            std::string title =
-                "Particule system | FPS: " + std::to_string(int(fps));
-            glfwSetWindowTitle(_window, title.c_str());
-
-            _fps  = 0;
-            _lastFpsTime = currentTime;
-        }
+		handleFps();
 		
 		// 1. OpenCL écrit → OpenGL lit
-		// glFinish();
-		// _system->acquireGLObjects();	// clEnqueueAcquireGLObjects
-		// _system->update(dt);			// kernels OpenCL
-		// _system->releaseGLObjects();	// clEnqueueReleaseGLObjects
-		
-		/* TEST */
 		_system->update(dt);
-		/* FIN TEST */
 		
 		// 2. OpenGL rend
-
 		float aspect = (float)WIDTH / (float)HEIGHT;
 
 		glm::mat4 projection = glm::perspective(
@@ -210,9 +192,29 @@ void Application::run() {
 		_system->render();
 		glFlush();
 
+		_imguiLayer.beginFrame();
+		_imguiLayer.render(*_system);
+		_imguiLayer.endFrame();
+
 		glfwSwapBuffers(_window);
 		glfwPollEvents();
 
 	}
+	_imguiLayer.shutdown();
 }
 
+void Application::handleFps() {
+	_fps++;
+	float currentTime = glfwGetTime();
+	if (currentTime - _lastFpsTime >= 1.0)
+	{
+		double fps = _fps / (currentTime - _lastFpsTime);
+
+		std::string title =
+			"Particule system | FPS: " + std::to_string(int(fps));
+		glfwSetWindowTitle(_window, title.c_str());
+
+		_fps  = 0;
+		_lastFpsTime = currentTime;
+	}
+}

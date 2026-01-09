@@ -40,14 +40,61 @@ __kernel void initShape(
 		
 		positions[gid] = (float4)(x, y, z, 1.0f);
 	}
+	
+	float gravityMass = 1.0f * 25.0f;
+	float4 gravityPos = {0.3f, 0.4f, 0.0f, 0.0f};
 
-	velocities[gid] = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
+	float3 dir = normalize(positions[gid].xyz - gravityPos.xyz);
+	
+	// vecteur perpendiculaire arbitraire
+	float3 tangent = normalize(cross(dir, (float3)(0.f, 1.f, 0.f)));
+	
+	float speed = sqrt(gravityMass / length(positions[gid].xyz - gravityPos.xyz));
+	
+	velocities[gid].xyz = tangent * speed;
+
+
+	// velocities[gid] = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
 
 	
-	colors[gid] = (float4)(0.2f, 0.5, 1.0f, 1.0f);
+	colors[gid] = (float4)(1.0f, 0.5f, 1.0f, 1.0f);
 }
 
-__kernel void update(
+// Gravity in space
+__kernel void updateSpace(
+	__global float4* positions,
+	__global float4* velocities,
+	const uint nbParticles,
+	const float dt,
+	const float4 gravityPos,
+	const float gravityMass,
+	const int gravityEnable
+)
+{
+	size_t gid = get_global_id(0);
+	if (gid >= nbParticles) return;
+
+	float3 pos = positions[gid].xyz;
+	float3 vel = velocities[gid].xyz;
+
+	if (gravityEnable) {
+		float3 dir = gravityPos.xyz - pos;
+		float dist2 = dot(dir, dir) + 0.01f; // epsilon
+		float invDist = rsqrt(dist2);
+		float invDist3 = invDist * invDist * invDist;
+
+		float3 accel = gravityMass * dir * invDist3;
+		vel += accel * dt;
+	}
+
+	pos += vel * dt;
+
+	positions[gid].xyz = pos;
+	velocities[gid].xyz = vel;
+}
+
+// Classic gravity on earth
+__kernel void updateEarth(
 	__global float4* positions,
 	__global float4* velocities,
 	const uint nbParticles,
@@ -55,7 +102,7 @@ __kernel void update(
 	const float4 gravity	
 )
 {
-	float speed = 2.0f;
+	float speed = 1.0f;
 
 	size_t gid = get_global_id(0);
 	if (gid >= nbParticles) return;
@@ -72,4 +119,5 @@ __kernel void update(
         velocities[gid].y *= -0.8f;
     }
 }
+
 

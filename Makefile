@@ -6,20 +6,22 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/18 10:18:17 by lde-merc          #+#    #+#              #
-#    Updated: 2025/12/18 11:03:44 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/01/09 15:28:52 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 # Compiler
 CPP      = g++
-FLAGS    = -MMD -g -std=c++17 -I includes/ -I$(HOME)/local/include
+FLAGS    = -MMD -g -std=c++17 -I includes/ -I$(HOME)/local/include -I includes/backends/
 LDFLAGS  = -L/usr/lib/x86_64-linux-gnu -l:libOpenCL.so.1 -lglfw -lGL
 
 # Sources
-vpath %.cpp srcs/
+vpath %.cpp srcs/ srcs/imGui/
 vpath %.c srcs/
 
-SRC      = main.cpp Application.cpp ParticleSystem.cpp
+SRC      = main.cpp Application.cpp ParticleSystem.cpp Camera.cpp ImGuiLayer.cpp \
+		   imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp imgui_impl_glfw.cpp \
+		   imgui_impl_opengl3.cpp imgui.cpp
 SRCC     = glad.c
 
 # Object directories
@@ -53,6 +55,7 @@ $(OBJDIR)/glad.o: $(SRCC)
 clean:
 	@rm -rf $(OBJDIR)
 	@echo "\033[34mDeleted object files!\033[0m"
+	@rm imgui.ini || true 
 
 # Clean object files + executable
 fclean: clean

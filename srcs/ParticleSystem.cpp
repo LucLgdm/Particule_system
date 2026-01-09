@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/07 13:38:21 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/09 15:07:42 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,7 @@ void ParticleSystem::initializeShape(const std::string& shape) {
 	
 	setKernel(shape);
 
-	_updateSys = clCreateKernel(_clProgram, "update", &err);
+	_updateSys = clCreateKernel(_clProgram, "updateSpace", &err);
 	if (err != CL_SUCCESS)
 		throw openClError("    \033[33mFailed to create kernel\033[0m");
 
@@ -210,78 +210,46 @@ void ParticleSystem::render() {
 }
 
 void ParticleSystem::acquireGLObjects() {
-// 	clEnqueueAcquireGLObjects(_clQueue, 1, &_clPosBuffer, 0, nullptr, nullptr);
-// 	clEnqueueAcquireGLObjects(_clQueue, 1, &_clVelBuffer, 0, nullptr, nullptr);
-
-	/* TEST */
 	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
 	clEnqueueAcquireGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
-	/* FIN TEST */
 }
 
 void ParticleSystem::releaseGLObjects() {
-	// clEnqueueReleaseGLObjects(_clQueue, 1, &_clPosBuffer, 0, nullptr, nullptr);
-	// clEnqueueReleaseGLObjects(_clQueue, 1, &_clVelBuffer, 0, nullptr, nullptr);
-	// clFinish(_clQueue);
-
-	/* TEST */
 	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
 	clEnqueueReleaseGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
 	clFlush(_clQueue); // push les commandes ; évite blocage implicite côté GL
-	/* FIN TEST */
 }
 
 void ParticleSystem::update(float dt) {	
 	// 1 Aquiring OpenGl buffers
-	// cl_int err;
-	// cl_mem buffer[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
-	// err = clEnqueueAcquireGLObjects(_clQueue, 3, buffer, 0, nullptr, nullptr);
-	// if (err != CL_SUCCESS)
-	// 	throw openClError("    \033[33mCan't aquire GL Objects\0330m");
-
-	// // 2 Set kernel arguments
-	// err  = clSetKernelArg(_updateSys, 0, sizeof(cl_mem), &_clPosBuffer);
-	// err |= clSetKernelArg(_updateSys, 1, sizeof(cl_mem), &_clVelBuffer);
-	
-	// cl_uint nb = static_cast<cl_uint>(_nbParticle);
-	// err |= clSetKernelArg(_updateSys, 2, sizeof(cl_uint), &nb);
-	// err |= clSetKernelArg(_updateSys, 3, sizeof(float), &dt);
-	// cl_float4 gravity = {0.0f, -9.8f, 0.0f, 0.0f};
-	// err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravity);
-
-	// // 3 Launch kernel
-	// clEnqueueNDRangeKernel(_clQueue, _updateSys, 1,
-	// 	nullptr, &_nbParticle, nullptr, 0, nullptr, nullptr);
-	
-	// // 4 Release buffers back to OpenGl
-	// clEnqueueReleaseGLObjects(_clQueue, 3, buffer, 0, nullptr, nullptr);
-
-	// 5. Ensure completion before rendering
-	// clFinish(_clQueue);
-
-	/* TEST */
 	cl_int err;
 	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
 	err = clEnqueueAcquireGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
 	if (err != CL_SUCCESS) throw openClError("Can't acquire GL objects");
 
-	// set args
+	// 2 Set kernel arguments
 	err  = clSetKernelArg(_updateSys, 0, sizeof(cl_mem), &_clPosBuffer);
 	err |= clSetKernelArg(_updateSys, 1, sizeof(cl_mem), &_clVelBuffer);
 	cl_uint nb = static_cast<cl_uint>(_nbParticle);
 	err |= clSetKernelArg(_updateSys, 2, sizeof(cl_uint), &nb);
 	err |= clSetKernelArg(_updateSys, 3, sizeof(float), &dt);
-	cl_float4 gravity = {0.0f, -9.8f, 0.0f, 0.0f};
-	err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravity);
+	// cl_float4 gravity = {0.0f, -9.8f, 0.0f, 0.0f};
+	// err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravity);
+	cl_float4 gravityPos = {0.3f, 0.4f, 0.0f, 0.0f};
+	float gravityMass = 1.0f * 25.f;
+	int gravityEnable = 1;
+	err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravityPos);
+	err |= clSetKernelArg(_updateSys, 5, sizeof(float), &gravityMass);
+	err |= clSetKernelArg(_updateSys, 6, sizeof(int), &gravityEnable);
+	if (err != CL_SUCCESS) throw openClError("Failed to set kernel arguments");
 
-	// launch kernel with rounded global size
+	// 3 Launch kernel
 	size_t local = 128;
 	size_t global = ((static_cast<size_t>(_nbParticle) + local - 1) / local) * local;
 	err = clEnqueueNDRangeKernel(_clQueue, _updateSys, 1, nullptr, &global, &local, 0, nullptr, nullptr);
+	if (err != CL_SUCCESS) throw openClError("Failed to enqueue kernel");
 
-	// release and flush
+	// 4 Release buffers back to OpenGl and Flush
 	clEnqueueReleaseGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
 	clFlush(_clQueue);
-	if (err != CL_SUCCESS) throw openClError("Failed to enqueue kernel");
-	/* FIN TEST */
 }

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/31 13:39:53 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/09 13:46:59 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@ static int WIDTH = 1600;
 
 #include "exception.hpp"
 #include "ParticleSystem.hpp"
+#include "ImGuiLayer.hpp"
+#include "Camera.hpp"
 
 class Application {
 	public:
@@ -39,9 +41,13 @@ class Application {
 		void run();
 		void cleanup();
 
+		void handleFps();
+
 	private:
 		GLFWwindow* _window;
 		std::unique_ptr<ParticleSystem> _system; // More modern and safer: avoids leaks
+		ImGuiLayer	_imguiLayer;
+		Camera		_camera;
 		int 	_nbParticle;
 		string 	_shape;
 		float 	_lastFrameTime;
