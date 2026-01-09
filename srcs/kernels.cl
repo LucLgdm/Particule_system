@@ -41,8 +41,8 @@ __kernel void initShape(
 		positions[gid] = (float4)(x, y, z, 1.0f);
 	}
 	
-	float gravityMass = 1.0f * 25.0f;
-	float4 gravityPos = {0.3f, 0.4f, 0.0f, 0.0f};
+	float gravityMass = 1.0f * 10.0f;
+	float4 gravityPos = {0.9f, 0.0f, 0.0f, 0.0f};
 
 	float3 dir = normalize(positions[gid].xyz - gravityPos.xyz);
 	
@@ -57,13 +57,14 @@ __kernel void initShape(
 	// velocities[gid] = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
 
 	
-	colors[gid] = (float4)(1.0f, 0.5f, 1.0f, 1.0f);
+	// colors[gid] = (float4)(1.0f, 0.5f, 1.0f, 1.0f);
 }
 
 // Gravity in space
 __kernel void updateSpace(
 	__global float4* positions,
 	__global float4* velocities,
+	__global float4* colors,
 	const uint nbParticles,
 	const float dt,
 	const float4 gravityPos,
@@ -85,9 +86,15 @@ __kernel void updateSpace(
 
 		float3 accel = gravityMass * dir * invDist3;
 		vel += accel * dt;
+		pos += vel * dt;
 	}
 
-	pos += vel * dt;
+	float speed = length(vel);
+	float scale = 5.0f;
+	float speedNorm = clamp(log(1.0f + speed) / log(1.0f + scale), 0.0f, 1.0f);
+	colors[gid].xyz = (float3)(1.0f - speedNorm, 0.0f, speedNorm);
+
+
 
 	positions[gid].xyz = pos;
 	velocities[gid].xyz = vel;

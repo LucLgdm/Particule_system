@@ -6,14 +6,12 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 13:46:59 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/09 17:22:14 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
-static int HEIGHT = 1200;
-static int WIDTH = 1600;
 
 #include <iostream>
 #include <string>
@@ -37,6 +35,7 @@ class Application {
 		Application &operator=(const Application &other);
 
 		void init(int, char **);
+		void setCallbacks();
 		void initShader();
 		void run();
 		void cleanup();

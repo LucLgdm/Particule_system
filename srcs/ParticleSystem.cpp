@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 15:07:42 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/09 17:40:36 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -149,7 +149,7 @@ void ParticleSystem::setKernel(const std::string &shape) {
 	if (err != CL_SUCCESS)
 		throw openClError("   \033[33mFailed to set kernel arguments\033[0m");
 	
-	std::cout << "\033[32mShape Kernel set succeffully !\033[0m" << std::endl;
+	std::cout << "\033[32minitShape Kernel set succeffully !\033[0m" << std::endl;
 }
 
 // Aquires the OpenGl buffers for OpenCl access
@@ -173,6 +173,7 @@ void ParticleSystem::initializeShape(const std::string& shape) {
 	_updateSys = clCreateKernel(_clProgram, "updateSpace", &err);
 	if (err != CL_SUCCESS)
 		throw openClError("    \033[33mFailed to create kernel\033[0m");
+	std::cout << "\033[32mudpateSpace Kernel set succeffully !\033[0m" << std::endl;
 
 	// 3 Launch kernel
 	clEnqueueNDRangeKernel(_clQueue, _initShape, 1,
@@ -230,17 +231,17 @@ void ParticleSystem::update(float dt) {
 	// 2 Set kernel arguments
 	err  = clSetKernelArg(_updateSys, 0, sizeof(cl_mem), &_clPosBuffer);
 	err |= clSetKernelArg(_updateSys, 1, sizeof(cl_mem), &_clVelBuffer);
+	err |= clSetKernelArg(_updateSys, 2, sizeof(cl_mem), &_clColBuffer);
 	cl_uint nb = static_cast<cl_uint>(_nbParticle);
-	err |= clSetKernelArg(_updateSys, 2, sizeof(cl_uint), &nb);
-	err |= clSetKernelArg(_updateSys, 3, sizeof(float), &dt);
+	err |= clSetKernelArg(_updateSys, 3, sizeof(cl_uint), &nb);
+	err |= clSetKernelArg(_updateSys, 4, sizeof(float), &dt);
 	// cl_float4 gravity = {0.0f, -9.8f, 0.0f, 0.0f};
 	// err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravity);
-	cl_float4 gravityPos = {0.3f, 0.4f, 0.0f, 0.0f};
-	float gravityMass = 1.0f * 25.f;
-	int gravityEnable = 1;
-	err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravityPos);
-	err |= clSetKernelArg(_updateSys, 5, sizeof(float), &gravityMass);
-	err |= clSetKernelArg(_updateSys, 6, sizeof(int), &gravityEnable);
+	cl_float4 gravityPos = {0.9f, 0.0f, 0.0f, 0.0f};
+	float gravityMass = 1.0f * 10.f;
+	err |= clSetKernelArg(_updateSys, 5, sizeof(cl_float4), &gravityPos);
+	err |= clSetKernelArg(_updateSys, 6, sizeof(float), &gravityMass);
+	err |= clSetKernelArg(_updateSys, 7, sizeof(int), &_gravityEnable);
 	if (err != CL_SUCCESS) throw openClError("Failed to set kernel arguments");
 
 	// 3 Launch kernel

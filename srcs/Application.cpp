@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 14:44:33 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/09 17:23:09 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,18 +70,47 @@ void Application::checkinput(int argc, char **argv) {
 void Application::initGLFW() {
 	if (!glfwInit())
 		throw glfwError("GLFW initialization failed");
-		
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	
+
 	_window = glfwCreateWindow(WIDTH, HEIGHT, "Particule_system", nullptr, nullptr);
 	if (!_window)
 		throw glfwError("Window creation failed");
-	
+
 	glfwMakeContextCurrent(_window);
 	glfwSwapInterval(1);
+
+	setCallbacks();
 }
+
+void Application::setCallbacks() {
+	// Scroll callback for zooming
+	glfwSetWindowUserPointer(_window, &_camera);
+	glfwSetScrollCallback(_window, [](GLFWwindow* win, double xoffset, double yoffset) {
+		Camera* cam = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(win));
+		cam->processScroll(static_cast<float>(yoffset));
+	});
+
+	// Mouse button callback for rotating
+	glfwSetMouseButtonCallback(_window, [](GLFWwindow* win, int button, int action, int mods) {
+		Camera* cam = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(win));
+		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+			if (action == GLFW_PRESS)
+				cam->beginRotate();
+			else if (action == GLFW_RELEASE)
+				cam->endRotate();
+		}
+	});
+
+	glfwSetCursorPosCallback(_window, [](GLFWwindow* win, double xpos, double ypos) {
+		Camera* cam = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(win));
+		cam->processMouseMove(static_cast<float>(xpos),
+							static_cast<float>(ypos));
+	});
+}
+
 
 void Application::initOpenGL() {
 	// Charger les fonctions OpenGL avec Glad
@@ -162,24 +191,11 @@ void Application::run() {
 		_system->update(dt);
 		
 		// 2. OpenGL rend
-		float aspect = (float)WIDTH / (float)HEIGHT;
-
-		glm::mat4 projection = glm::perspective(
-			glm::radians(45.0f),
-			aspect,
-			0.1f,
-			100.0f
-		);
-
-		glm::mat4 view = glm::lookAt(
-			glm::vec3(0.0f, 0.0f, 3.0f),  // caméra
-			glm::vec3(0.0f, 0.0f, 0.0f),  // centre
-			glm::vec3(0.0f, 1.0f, 0.0f)   // haut
-		);
+		_camera.update(_window);
 
 		glm::mat4 model = glm::mat4(1.0f);
 
-		glm::mat4 mvp = projection * view * model;
+		glm::mat4 mvp = _camera.getProjectionMatrix() * _camera.getViewMatrix() * model;
 		
 		glUseProgram(_shaderProgram);
 		

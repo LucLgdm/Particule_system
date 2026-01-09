@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 14:34:43 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/09 16:08:22 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,14 +43,39 @@ void ImGuiLayer::beginFrame() {
 	ImGui::NewFrame();
 }
 
+
+/* 
+	ImGui::Begin / End
+	ImGui::Button
+	ImGui::Checkbox
+	ImGui::SliderFloat
+	ImGui::Text
+*/
 // Render ImGui draw data
 void ImGuiLayer::render(ParticleSystem& system) {
 	ImGui::Begin("Particle System Controls");
 
-	// static float radius = 1.0f;
-	// if (ImGui::SliderFloat("Radius", &radius, 0.1f, 5.0f)) {
-	// 	// Update radius in the particle system if needed
-	// }
+	static bool gravityEnable = 0;
+	if (ImGui::Checkbox("Enable Gravity", &gravityEnable)) {
+		// Update gravity enable in the particle system
+		system.setGravity(gravityEnable);
+	}
+
+	static bool resetShpere = false, resetCube = false;
+	ImGui::Checkbox("Sphere", &resetShpere);
+	ImGui::SameLine();
+	ImGui::Checkbox("Cube", &resetCube);
+	
+	ImGui::Button("Reset Particles");
+	if (ImGui::IsItemClicked() && (resetShpere || resetCube)) {
+		if (resetShpere) {
+			system.initializeShape("sphere");
+			resetShpere = false;
+		}else {
+			system.initializeShape("cube");
+			resetCube = false;
+		}
+	}
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
 		1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

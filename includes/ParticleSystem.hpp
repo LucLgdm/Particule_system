@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2025/12/31 11:54:09 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/09 15:56:02 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,11 +58,13 @@ class ParticleSystem {
 		GLuint posBuffer() const { return _posBuffer; };
 		GLuint velBuffer() const { return _velBuffer; };
 		GLuint colBuffer() const { return _colorBuffer; };
+
+		void setGravity(bool gravityEnable) {_gravityEnable = (gravityEnable ? 1 : 0);};
 		
 	private:
 		size_t _nbParticle;
 		float _radius;
-
+		int _gravityEnable = 0;
 
 		// OpenGl
 		GLuint _posBuffer;
