@@ -22,33 +22,31 @@ CameraFps::CameraFps(): _position(0.0f, 0.0f, 7.0f), _target(0.0f, 0.0f, 0.0f), 
 CameraFps::~CameraFps() {}
 
 CameraFps::CameraFps(const CameraFps &other) {
-    *this = other;
+	*this = other;
 }
 
 CameraFps &CameraFps::operator=(const CameraFps &other) {
-    if (this != &other) {
-        // copy attributes here
-    }
-    return *this;
+	if (this != &other) {
+		// copy attributes here
+	}
+	return *this;
 }
 
 void CameraFps::update(GLFWwindow* window) {
-	// Here you can implement CameraFps controls (e.g., WASD for movement, mouse for looking around)
-	// For simplicity, we'll keep the CameraFps static in this example
 
 	_viewMatrix = glm::lookAt(_position, _target, _up);
 	_projectionMatrix = glm::perspective(glm::radians(_fov), _aspectRatio, 0.1f, 100.0f);
 }
 
 void CameraFps::processScroll(float yoffset) {
-    float zoomSpeed = 0.5f; // ajustable
-    glm::vec3 direction = glm::normalize(_target - _position);
+	float zoomSpeed = 0.5f; // ajustable
+	glm::vec3 direction = glm::normalize(_target - _position);
 
-    // avancer/reculer la position le long du vecteur vers le target
-    _position += direction * yoffset * zoomSpeed;
+	// avancer/reculer la position le long du vecteur vers le target
+	_position += direction * yoffset * zoomSpeed;
 
-    // mettre à jour la matrice de vue
-    _viewMatrix = glm::lookAt(_position, _target, _up);
+	// mettre à jour la matrice de vue
+	_viewMatrix = glm::lookAt(_position, _target, _up);
 }
 
 void CameraFps::beginRotate() {

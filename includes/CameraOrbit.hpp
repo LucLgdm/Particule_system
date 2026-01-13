@@ -17,6 +17,8 @@
 
 #include "global.hpp"
 
+#include <map>
+
 struct GLFWwindow;
 
 class CameraOrbit {
@@ -39,6 +41,7 @@ class CameraOrbit {
 		float _distance;
 		float _yaw;
 		float _pitch;
+		float _moveSpeed;
 
 		// Camera
 		glm::vec3 _position;
@@ -55,6 +58,9 @@ class CameraOrbit {
 		bool  _firstMouse;
 		float _lastX;
 		float _lastY;
+		
+		// Keys
+		std::map<int, KeyState> _keys;
 
 		void updateView();
 

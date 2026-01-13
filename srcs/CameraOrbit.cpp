@@ -11,9 +11,11 @@
 /* ************************************************************************** */
 
 #include "CameraOrbit.hpp"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
-CameraOrbit::CameraOrbit(): _target(0.0f, 0.0f, 0.0f), _distance(5.0f), _yaw(-90.0f),
-			_pitch(0.0f), _up(0.0f, 1.0f, 0.0f), _fov(45.0f), _rotating(false),
+CameraOrbit::CameraOrbit(): _target(0.0f, 0.0f, 0.0f), _distance(7.0f), _yaw(-90.0f),
+			_pitch(0.0f), _moveSpeed(0.02f), _up(0.0f, 1.0f, 0.0f), _fov(45.0f), _rotating(false),
 			_firstMouse(true) {
 	_aspectRatio = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
 	_projectionMatrix = glm::perspective(
@@ -28,9 +30,22 @@ CameraOrbit::CameraOrbit(): _target(0.0f, 0.0f, 0.0f), _distance(5.0f), _yaw(-90
 
 CameraOrbit::~CameraOrbit() {}
 
-void CameraOrbit::update(GLFWwindow* _window) {
-	// Rien ici pour l’instant
-	// L’orbite est pilotée par la souris
+void CameraOrbit::update(GLFWwindow* window) {
+	glm::vec3 forward = normalize(_target - _position);
+	glm::vec3 right = normalize(cross(forward, _up));
+
+
+	// Update key states
+	for(auto &keyPair : _keys) {
+		keyPair.second.update(glfwGetKey(window, keyPair.first) == GLFW_PRESS);
+	}
+
+	if (_keys[GLFW_KEY_W].isDown) _target +=  forward * _moveSpeed;
+	if (_keys[GLFW_KEY_S].isDown) _target -=  forward * _moveSpeed;
+	if (_keys[GLFW_KEY_A].isDown) _target -=  right * _moveSpeed;
+	if (_keys[GLFW_KEY_D].isDown) _target +=  right * _moveSpeed;
+	
+	updateView();
 }
 
 void CameraOrbit::updateView() {

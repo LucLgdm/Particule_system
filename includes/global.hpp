@@ -15,3 +15,21 @@
 
 static int HEIGHT = 1200;
 static int WIDTH = 1600;
+
+struct KeyState {
+    bool isDown = false;
+    bool wasDown = false;
+
+    bool pressed() const {
+        return isDown && !wasDown;
+    }
+
+    bool released() const {
+        return !isDown && wasDown;
+    }
+
+    void update(bool currentDown) {
+        wasDown = isDown;
+        isDown = currentDown;
+    }
+};

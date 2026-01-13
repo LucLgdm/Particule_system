@@ -125,7 +125,6 @@ void Application::setCallbacks() {
 	});
 }
 
-
 void Application::initOpenGL() {
 	// Charger les fonctions OpenGL avec Glad
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
