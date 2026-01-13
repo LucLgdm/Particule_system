@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Camera.cpp                                         :+:      :+:    :+:   */
+/*   CameraFps.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,37 +10,37 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Camera.hpp"
+#include "CameraFps.hpp"
 
 // Constructeur
-Camera::Camera(): _position(0.0f, 0.0f, 3.0f), _target(0.0f, 0.0f, 0.0f), _up(0.0f, 1.0f, 0.0f), _fov(45.0f){
+CameraFps::CameraFps(): _position(0.0f, 0.0f, 3.0f), _target(0.0f, 0.0f, 0.0f), _up(0.0f, 1.0f, 0.0f), _fov(45.0f){
 	_aspectRatio = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
 	_viewMatrix = glm::lookAt(_position, _target, _up);
 	_projectionMatrix = glm::perspective(glm::radians(_fov), _aspectRatio, 0.1f, 100.0f);
 }
 
-Camera::~Camera() {}
+CameraFps::~CameraFps() {}
 
-Camera::Camera(const Camera &other) {
+CameraFps::CameraFps(const CameraFps &other) {
     *this = other;
 }
 
-Camera &Camera::operator=(const Camera &other) {
+CameraFps &CameraFps::operator=(const CameraFps &other) {
     if (this != &other) {
         // copy attributes here
     }
     return *this;
 }
 
-void Camera::update(GLFWwindow* window) {
-	// Here you can implement camera controls (e.g., WASD for movement, mouse for looking around)
-	// For simplicity, we'll keep the camera static in this example
+void CameraFps::update(GLFWwindow* window) {
+	// Here you can implement CameraFps controls (e.g., WASD for movement, mouse for looking around)
+	// For simplicity, we'll keep the CameraFps static in this example
 
 	_viewMatrix = glm::lookAt(_position, _target, _up);
 	_projectionMatrix = glm::perspective(glm::radians(_fov), _aspectRatio, 0.1f, 100.0f);
 }
 
-void Camera::processScroll(float yoffset) {
+void CameraFps::processScroll(float yoffset) {
     float zoomSpeed = 0.5f; // ajustable
     glm::vec3 direction = glm::normalize(_target - _position);
 
@@ -51,16 +51,16 @@ void Camera::processScroll(float yoffset) {
     _viewMatrix = glm::lookAt(_position, _target, _up);
 }
 
-void Camera::beginRotate() {
+void CameraFps::beginRotate() {
 	_rotating = true;
 	_firstMouse = true;
 }
 
-void Camera::endRotate() {
+void CameraFps::endRotate() {
 	_rotating = false;
 }
 
-void Camera::processMouseMove(float xpos, float ypos) {
+void CameraFps::processMouseMove(float xpos, float ypos) {
 	if (!_rotating)
 		return;
 

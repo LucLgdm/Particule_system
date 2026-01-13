@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 17:23:09 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/13 12:46:54 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,27 +87,41 @@ void Application::initGLFW() {
 
 void Application::setCallbacks() {
 	// Scroll callback for zooming
-	glfwSetWindowUserPointer(_window, &_camera);
+	glfwSetWindowUserPointer(_window, this);
 	glfwSetScrollCallback(_window, [](GLFWwindow* win, double xoffset, double yoffset) {
-		Camera* cam = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(win));
-		cam->processScroll(static_cast<float>(yoffset));
+		Application* app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(win));
+		if (app->_cameraMode == CameraMode::FPS)
+			app->_cameraFps.processScroll(static_cast<float>(yoffset));
+		else
+			app->_cameraOrbit.processScroll(static_cast<float>(yoffset));
 	});
 
-	// Mouse button callback for rotating
+	// Callbacks for Camera rotation
 	glfwSetMouseButtonCallback(_window, [](GLFWwindow* win, int button, int action, int mods) {
-		Camera* cam = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(win));
+		Application* app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(win));
 		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			if (action == GLFW_PRESS)
-				cam->beginRotate();
-			else if (action == GLFW_RELEASE)
-				cam->endRotate();
+			if (app->_cameraMode == CameraMode::FPS) {
+				if (action == GLFW_PRESS)
+					app->_cameraFps.beginRotate();
+				else if (action == GLFW_RELEASE)
+					app->_cameraFps.endRotate();
+			} else {
+				if (action == GLFW_PRESS)
+					app->_cameraOrbit.beginRotate();
+				else if (action == GLFW_RELEASE)
+					app->_cameraOrbit.endRotate();
+			}
 		}
 	});
 
 	glfwSetCursorPosCallback(_window, [](GLFWwindow* win, double xpos, double ypos) {
-		Camera* cam = reinterpret_cast<Camera*>(glfwGetWindowUserPointer(win));
-		cam->processMouseMove(static_cast<float>(xpos),
-							static_cast<float>(ypos));
+		Application* app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(win));
+		if (app->_cameraMode == CameraMode::FPS)
+			app->_cameraFps.processMouseMove(static_cast<float>(xpos),
+								static_cast<float>(ypos));
+		else
+			app->_cameraOrbit.processMouseMove(static_cast<float>(xpos),
+								static_cast<float>(ypos));
 	});
 }
 
@@ -191,11 +205,11 @@ void Application::run() {
 		_system->update(dt);
 		
 		// 2. OpenGL rend
-		_camera.update(_window);
+		updateCam();
 
 		glm::mat4 model = glm::mat4(1.0f);
 
-		glm::mat4 mvp = _camera.getProjectionMatrix() * _camera.getViewMatrix() * model;
+		glm::mat4 mvp = getProjectionMatrix() * getViewMatrix() * model;
 		
 		glUseProgram(_shaderProgram);
 		
@@ -209,7 +223,7 @@ void Application::run() {
 		glFlush();
 
 		_imguiLayer.beginFrame();
-		_imguiLayer.render(*_system);
+		_imguiLayer.render(*_system, _cameraMode);
 		_imguiLayer.endFrame();
 
 		glfwSwapBuffers(_window);

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 17:22:14 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/13 12:46:54 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,9 @@
 #include "exception.hpp"
 #include "ParticleSystem.hpp"
 #include "ImGuiLayer.hpp"
-#include "Camera.hpp"
+#include "CameraFps.hpp"
+#include "CameraOrbit.hpp"
+
 
 class Application {
 	public:
@@ -40,20 +42,45 @@ class Application {
 		void run();
 		void cleanup();
 
+		glm::mat4 getViewMatrix() const {
+			if (_cameraMode == CameraMode::FPS)
+				return _cameraFps.getViewMatrix();
+			else
+				return _cameraOrbit.getViewMatrix();
+		}
+
+		glm::mat4 getProjectionMatrix() const {
+			if (_cameraMode == CameraMode::FPS)
+				return _cameraFps.getProjectionMatrix();
+			else
+				return _cameraOrbit.getProjectionMatrix();
+		}
+
+		void updateCam() {
+			if (_cameraMode == CameraMode::FPS)
+				_cameraFps.update(_window);
+			else
+				_cameraOrbit.update(_window);
+		}
 		void handleFps();
+
+		// Public members for callback access
+		CameraMode		_cameraMode = CameraMode::ORBIT;
+		CameraFps		_cameraFps;
+		CameraOrbit		_cameraOrbit;
 
 	private:
 		GLFWwindow* _window;
 		std::unique_ptr<ParticleSystem> _system; // More modern and safer: avoids leaks
 		ImGuiLayer	_imguiLayer;
-		Camera		_camera;
 		int 	_nbParticle;
 		string 	_shape;
 		float 	_lastFrameTime;
 		float 	_lastFpsTime;
 		int		_fps;
-
+		
 		GLuint _shaderProgram;
+
 
 		void checkinput(int, char**);
 		void initGLFW();

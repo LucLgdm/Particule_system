@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Camera.hpp                                         :+:      :+:    :+:   */
+/*   CameraFps.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -17,16 +17,15 @@
 
 struct GLFWwindow;
 
-static int HEIGHT = 1200;
-static int WIDTH = 1600;
+#include "global.hpp"
 
-class Camera {
+class CameraFps {
 	public:
-		Camera();
-		~Camera();
-		Camera(const Camera &other);
+		CameraFps();
+		~CameraFps();
+		CameraFps(const CameraFps &other);
 		
-		Camera &operator=(const Camera &other);
+		CameraFps &operator=(const CameraFps &other);
 
 		void update(GLFWwindow*);
 

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 16:08:22 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/12 14:32:54 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,9 +52,16 @@ void ImGuiLayer::beginFrame() {
 	ImGui::Text
 */
 // Render ImGui draw data
-void ImGuiLayer::render(ParticleSystem& system) {
+void ImGuiLayer::render(ParticleSystem& system, CameraMode& cameraMode) {
 	ImGui::Begin("Particle System Controls");
 
+	renderCamera(cameraMode);
+	renderPS(system);
+
+	ImGui::End();
+}
+
+void ImGuiLayer::renderPS(ParticleSystem& system) {
 	static bool gravityEnable = 0;
 	if (ImGui::Checkbox("Enable Gravity", &gravityEnable)) {
 		// Update gravity enable in the particle system
@@ -79,8 +86,18 @@ void ImGuiLayer::render(ParticleSystem& system) {
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
 		1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+}
 
-	ImGui::End();
+void ImGuiLayer::renderCamera(CameraMode& cameraMode) {
+	const char* items[] = { "Orbit", "Fps" };
+	static int current_item = (cameraMode == CameraMode::ORBIT) ? 0 : 1;
+
+	if (ImGui::Combo("Camera Mode", &current_item, items, IM_ARRAYSIZE(items))) {
+		if (current_item == 0)
+			cameraMode = CameraMode::ORBIT;
+		else
+			cameraMode = CameraMode::FPS;
+	}
 }
 
 // End the ImGui frame

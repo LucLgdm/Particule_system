@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:59 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 14:36:02 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/13 12:01:24 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,11 @@
 
 #include "ParticleSystem.hpp"
 
+enum class CameraMode {
+	ORBIT,
+	FPS
+};
+
 class ImGuiLayer {
 	public:
 		ImGuiLayer();
@@ -31,7 +36,9 @@ class ImGuiLayer {
 
 		void initImGui(GLFWwindow*);
 		void beginFrame();
-		void render(ParticleSystem&);
+		void render(ParticleSystem&, CameraMode&);
+		void renderPS(ParticleSystem&);
+		void renderCamera(CameraMode&);
 		void endFrame();
 		void shutdown();
 	private:
