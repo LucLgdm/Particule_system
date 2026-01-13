@@ -6,14 +6,14 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 17:40:36 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/13 15:53:34 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ParticleSystem.hpp"
 
 // Constructeur
-ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(1.0f), _nbParticle(num) {
+ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.0f), _nbParticle(num) {
 	createBuffers();			// glGenBuffers && glBufferData
 	registerInterop();			// clCreateFromGLBuffer
 	createKernel();				// GPU Kernel
@@ -133,8 +133,8 @@ void ParticleSystem::createKernel() {
 
 void ParticleSystem::setKernel(const std::string &shape) {
 	cl_int err;
-	int flag = (shape == "sphere" ? 1 : 0);
-	std::cout << "\033[36mSetting kernel arguments...\033[0m" << std::endl;
+	int flag = (shape == "sphere" ? 0 : (shape == "cube" ? 1 : 2));
+	// std::cout << "\033[36mSetting kernel arguments...\033[0m" << std::endl;
 	// Buffer arguments
 	err  = clSetKernelArg(_initShape, 0, sizeof(cl_mem), &_clPosBuffer);
 	err |= clSetKernelArg(_initShape, 1, sizeof(cl_mem), &_clVelBuffer);
@@ -149,7 +149,7 @@ void ParticleSystem::setKernel(const std::string &shape) {
 	if (err != CL_SUCCESS)
 		throw openClError("   \033[33mFailed to set kernel arguments\033[0m");
 	
-	std::cout << "\033[32minitShape Kernel set succeffully !\033[0m" << std::endl;
+	// std::cout << "\033[32minitShape Kernel set succeffully !\033[0m" << std::endl;
 }
 
 // Aquires the OpenGl buffers for OpenCl access
@@ -173,7 +173,7 @@ void ParticleSystem::initializeShape(const std::string& shape) {
 	_updateSys = clCreateKernel(_clProgram, "updateSpace", &err);
 	if (err != CL_SUCCESS)
 		throw openClError("    \033[33mFailed to create kernel\033[0m");
-	std::cout << "\033[32mudpateSpace Kernel set succeffully !\033[0m" << std::endl;
+	// std::cout << "\033[32mudpateSpace Kernel set succeffully !\033[0m" << std::endl;
 
 	// 3 Launch kernel
 	clEnqueueNDRangeKernel(_clQueue, _initShape, 1,
@@ -238,7 +238,7 @@ void ParticleSystem::update(float dt) {
 	// cl_float4 gravity = {0.0f, -9.8f, 0.0f, 0.0f};
 	// err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravity);
 	cl_float4 gravityPos = {0.9f, 0.0f, 0.0f, 0.0f};
-	float gravityMass = 1.0f * 10.f;
+	float gravityMass = 1.0f * 50.f;
 	err |= clSetKernelArg(_updateSys, 5, sizeof(cl_float4), &gravityPos);
 	err |= clSetKernelArg(_updateSys, 6, sizeof(float), &gravityMass);
 	err |= clSetKernelArg(_updateSys, 7, sizeof(int), &_gravityEnable);

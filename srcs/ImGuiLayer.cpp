@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/12 14:32:54 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/13 15:21:55 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,19 +68,24 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 		system.setGravity(gravityEnable);
 	}
 
-	static bool resetShpere = false, resetCube = false;
+	static bool resetShpere = false, resetCube = false, resetPyramid = false;
 	ImGui::Checkbox("Sphere", &resetShpere);
 	ImGui::SameLine();
 	ImGui::Checkbox("Cube", &resetCube);
-	
+	ImGui::SameLine();
+	ImGui::Checkbox("Pyramid", &resetPyramid);
+
 	ImGui::Button("Reset Particles");
-	if (ImGui::IsItemClicked() && (resetShpere || resetCube)) {
+	if (ImGui::IsItemClicked() && (resetShpere || resetCube || resetPyramid)) {
 		if (resetShpere) {
 			system.initializeShape("sphere");
 			resetShpere = false;
-		}else {
+		}else if (resetCube) {
 			system.initializeShape("cube");
 			resetCube = false;
+		}else {
+			system.initializeShape("pyramid");
+			resetPyramid = false;
 		}
 	}
 

@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   CameraFps.cpp                                         :+:      :+:    :+:   */
+/*   CameraFps.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -13,7 +13,7 @@
 #include "CameraFps.hpp"
 
 // Constructeur
-CameraFps::CameraFps(): _position(0.0f, 0.0f, 3.0f), _target(0.0f, 0.0f, 0.0f), _up(0.0f, 1.0f, 0.0f), _fov(45.0f){
+CameraFps::CameraFps(): _position(0.0f, 0.0f, 7.0f), _target(0.0f, 0.0f, 0.0f), _up(0.0f, 1.0f, 0.0f), _fov(45.0f){
 	_aspectRatio = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
 	_viewMatrix = glm::lookAt(_position, _target, _up);
 	_projectionMatrix = glm::perspective(glm::radians(_fov), _aspectRatio, 0.1f, 100.0f);
