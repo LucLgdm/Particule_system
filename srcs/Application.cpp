@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/13 12:46:54 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 17:49:52 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -220,7 +220,7 @@ void Application::run() {
 		glFlush();
 
 		_imguiLayer.beginFrame();
-		_imguiLayer.render(*_system, _cameraMode);
+		_imguiLayer.render(*_system, _cameraMode, _cameraOrbit);
 		_imguiLayer.endFrame();
 
 		glfwSwapBuffers(_window);

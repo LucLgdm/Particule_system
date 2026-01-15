@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/12 14:10:42 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/12 14:10:43 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 18:16:51 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,14 @@
 #include <GLFW/glfw3.h>
 
 CameraOrbit::CameraOrbit(): _target(0.0f, 0.0f, 0.0f), _distance(7.0f), _yaw(-90.0f),
-			_pitch(0.0f), _moveSpeed(0.02f), _up(0.0f, 1.0f, 0.0f), _fov(45.0f), _rotating(false),
+			_pitch(0.0f), _moveSpeed(0.1f), _up(0.0f, 1.0f, 0.0f), _fov(45.0f), _rotating(false),
 			_firstMouse(true) {
 	_aspectRatio = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
 	_projectionMatrix = glm::perspective(
 		glm::radians(_fov),
 		_aspectRatio,
 		0.1f,
-		100.0f
+		3000.0f
 	);
 
 	updateView();
@@ -31,7 +31,15 @@ CameraOrbit::CameraOrbit(): _target(0.0f, 0.0f, 0.0f), _distance(7.0f), _yaw(-90
 CameraOrbit::~CameraOrbit() {}
 
 void CameraOrbit::update(GLFWwindow* window) {
-	glm::vec3 forward = normalize(_target - _position);
+	// glm::vec3 forward = normalize(_target - _position);
+	// glm::vec3 right = normalize(cross(forward, _up));
+
+	glm::vec3 forward;
+	forward.x = cos(glm::radians(_pitch)) * cos(glm::radians(_yaw));
+	forward.y = sin(glm::radians(_pitch));
+	forward.z = -cos(glm::radians(_pitch)) * sin(glm::radians(_yaw));
+	forward = normalize(forward);
+	
 	glm::vec3 right = normalize(cross(forward, _up));
 
 

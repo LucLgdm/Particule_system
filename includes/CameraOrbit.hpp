@@ -34,7 +34,8 @@ class CameraOrbit {
 
 		const glm::mat4& getViewMatrix() const { return _viewMatrix; }
 		const glm::mat4& getProjectionMatrix() const { return _projectionMatrix; }
-
+		const float getSpeed() const { return _moveSpeed; }
+		void setSpeed(float speed) { _moveSpeed = speed; }
 	private:
 		// Orbite
 		glm::vec3 _target;

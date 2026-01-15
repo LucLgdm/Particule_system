@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:59 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/13 12:01:24 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 17:50:12 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,9 @@ enum class CameraMode {
 	FPS
 };
 
+#include "CameraOrbit.hpp"
+#include "CameraFps.hpp"
+
 class ImGuiLayer {
 	public:
 		ImGuiLayer();
@@ -36,9 +39,9 @@ class ImGuiLayer {
 
 		void initImGui(GLFWwindow*);
 		void beginFrame();
-		void render(ParticleSystem&, CameraMode&);
+		void render(ParticleSystem&, CameraMode&, CameraOrbit&);
 		void renderPS(ParticleSystem&);
-		void renderCamera(CameraMode&);
+		void renderCamera(CameraMode&, CameraOrbit&);
 		void endFrame();
 		void shutdown();
 	private:

@@ -75,7 +75,7 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 	float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
 
 	for(uint i = 0; i < nGravityPoint; i++) {
-		// if (!gPoint[i].active) continue;
+		//if (!gPoint[i].active) continue;
 
 		float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
 		float dist = length(dir);

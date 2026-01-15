@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/15 16:21:04 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 17:53:46 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,10 +52,10 @@ void ImGuiLayer::beginFrame() {
 	ImGui::Text
 */
 // Render ImGui draw data
-void ImGuiLayer::render(ParticleSystem& system, CameraMode& cameraMode) {
+void ImGuiLayer::render(ParticleSystem& system, CameraMode& cameraMode, CameraOrbit& cameraOrbit) {
 	ImGui::Begin("Particle System Controls");
 
-	renderCamera(cameraMode);
+	renderCamera(cameraMode, cameraOrbit);
 	renderPS(system);
 
 	ImGui::End();
@@ -170,7 +170,7 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 		1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 }
 
-void ImGuiLayer::renderCamera(CameraMode& cameraMode) {
+void ImGuiLayer::renderCamera(CameraMode& cameraMode, CameraOrbit& cameraOrbit) {
 	const char* items[] = { "Orbit", "Fps" };
 	static int current_item = (cameraMode == CameraMode::ORBIT) ? 0 : 1;
 
@@ -179,6 +179,11 @@ void ImGuiLayer::renderCamera(CameraMode& cameraMode) {
 			cameraMode = CameraMode::ORBIT;
 		else
 			cameraMode = CameraMode::FPS;
+	}
+	float speed = cameraOrbit.getSpeed();
+	ImGui::SliderFloat("Camera Speed", &speed, 0.01f, 1.0f);
+	if (speed != cameraOrbit.getSpeed()) {
+		cameraOrbit.setSpeed(speed);
 	}
 }
 

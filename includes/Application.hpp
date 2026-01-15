@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/13 12:46:54 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 17:47:39 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,7 @@
 #include "exception.hpp"
 #include "ParticleSystem.hpp"
 #include "ImGuiLayer.hpp"
-#include "CameraFps.hpp"
-#include "CameraOrbit.hpp"
+
 
 
 class Application {
