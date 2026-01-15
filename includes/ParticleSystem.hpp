@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/15 12:02:56 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 16:25:27 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,11 +39,11 @@
 struct GravityPoint {
 	float _Mass;
 	cl_float4 _Position;
-	bool active = false;
+	uint32_t active; // 1 active, -1 inactive
 
 	GravityPoint();
 	GravityPoint(float x, float y, float z, float w, float m)
-		: _Position{ x, y, z, w }, _Mass(m) {}
+		: _Position{ x, y, z, w }, _Mass(m), active(0) {}
 
 	float getx() const { return _Position.s[0]; };
 	float gety() const { return _Position.s[1]; };
@@ -55,8 +55,9 @@ struct GravityPoint {
 		_Position.s[0] = pos[0];
 		_Position.s[1] = pos[1];
 		_Position.s[2] = pos[2];
-		_Position.s[3] = pos[3];
+		_Mass = pos[3];
 	}
+	
 };
 
 
@@ -90,13 +91,10 @@ class ParticleSystem {
 
 		void setGravity(bool gravityEnable) {_gravityEnable = (gravityEnable ? 1 : 0);};
 
-		void addGravityPoint(float x, float y, float z, float m) {
-			if (_GravityCenter.size() >= 8)
-				return;
-
-			_GravityCenter.emplace_back(x, y, z, 1.0f, m);
-			_nGravityPos = static_cast<int>(_GravityCenter.size());
-		}
+		void addGravityPoint(float, float, float, float);
+		void removeGravityPoint(int);
+		
+		void updateGravityBuffer();
 		
 	private:
 		size_t _nbParticle;
@@ -120,6 +118,7 @@ class ParticleSystem {
 		cl_mem _clPosBuffer;
 		cl_mem _clVelBuffer;
 		cl_mem _clColBuffer;
+		cl_mem _clGravityBuffer = nullptr;
 			// kernel
 		cl_kernel _initShape;
 		cl_kernel _updateSys;

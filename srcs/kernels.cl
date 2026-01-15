@@ -1,6 +1,12 @@
 #define PI 3.14159265358979323846f
 #define GOLDEN_ANGLE 2.399963229728653f
 
+struct GravityPoint {
+	float _Mass;
+	float4 _Position;
+	uint active;
+};
+
 float hash(uint x) {
     x ^= x >> 16;
     x *= 0x7feb352d;
@@ -62,22 +68,56 @@ void createPyramid(float4* positions, size_t gid, const uint n) {
 	positions[gid] = (float4)(x, y, z, 1.0f);
 }
 
-void initSpeed(float4* positions, float4* velocities, size_t gid) {
-	float gravityMass = 1.0f * 10.0f;
-	float4 gravityPos = {0.9f, 0.0f, 0.0f, 0.0f};
+void initSpeed(float4* positions, float4* velocities, size_t gid,
+	__global const  struct GravityPoint* gPoint, const uint nGravityPoint) {
+	
+	float3 totalAccel = (float3)(0.0f, 0.0f, 0.0f);
+	float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
 
-	float3 dir = normalize(positions[gid].xyz - gravityPos.xyz);
+	for(uint i = 0; i < nGravityPoint; i++) {
+		// if (!gPoint[i].active) continue;
+
+		float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
+		float dist = length(dir);
+		
+		if (dist < 0.1f) continue; // Trop proche, éviter division par zéro
+		
+		float3 dirNorm = dir / dist;
+		
+		// Vitesse orbitale circulaire : v = sqrt(GM/r)
+		float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
+		
+
+		//		Sans variation orbitale
+		// Vecteur perpendiculaire pour la vitesse tangentielle
+		float3 upVector = (float3)(0.0f, 1.0f, 0.0f);
+		if (fabs(dot(dirNorm, upVector)) > 0.9f) {
+			upVector = (float3)(1.0f, 0.0f, 0.0f);
+		}
+		float3 tangent = normalize(cross(dirNorm, upVector));
+		
+		// Ajouter une composante aléatoire pour varier les orbites
+		float randomFactor = 0.8f + hash(gid) * 0.4f; // Entre 0.8 et 1.2
+
+		//		Variation d'inclinaison orbitale
+		// Axe de rotation aléatoire pour chaque particule
+		// float angle1 = hash(gid * 2u) * 2.0f * PI;
+		// float angle2 = hash(gid * 2u + 1u) * PI * 0.3f; // Inclinaison max 30°
+		// 
+		// float3 axis = (float3)(
+		// 	sin(angle2) * cos(angle1),
+		// 	cos(angle2),
+		// 	sin(angle2) * sin(angle1)
+		// );
+		// 
+		// float3 tangent = normalize(cross(dirNorm, axis));
+		// 
+		// float randomFactor = 0.7f + hash(gid * 3u) * 0.6f; // 0.7 à 1.3
+		
+		totalVel += tangent * orbitalSpeed * randomFactor;
+	}
 	
-	// vecteur perpendiculaire arbitraire
-	float3 upVector = (float3)(0.f, 1.f, 0.f);
-    if (fabs(dot(dir, upVector)) > 0.9f) {
-        upVector = (float3)(1.f, 0.f, 0.f);
-    }
-	float3 tangent = normalize(cross(dir, upVector));
-	
-	float speed = sqrt(gravityMass / length(positions[gid].xyz - gravityPos.xyz));
-	
-	velocities[gid].xyz = tangent * speed;
+	velocities[gid].xyz = totalVel;
 }
 
 __kernel void initShape(
@@ -85,7 +125,9 @@ __kernel void initShape(
 	__global float4* velocities,
 	__global float4* colors,
 	const uint nbParticles,
-	const float radius, const int flag)
+	const float radius, const int flag,
+	__global const struct GravityPoint* gPoint,
+	const uint nGravityPoint)
 {
 	size_t gid = get_global_id(0);
 	if (gid >= nbParticles) return;
@@ -98,7 +140,7 @@ __kernel void initShape(
 		createPyramid(positions, gid, nbParticles);
 	}
 	
-	initSpeed(positions, velocities, gid);
+	initSpeed(positions, velocities, gid, gPoint, nGravityPoint);
 	// velocities[gid] = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
 
 	
@@ -112,9 +154,8 @@ __kernel void updateSpace(
 	__global float4* colors,
 	const uint nbParticles,
 	const float dt,
-	const float4 gravityPos,
-	const float gravityMass,
-	const int gravityEnable
+	__global const struct GravityPoint* gPoint,
+	const uint nGravityPoint
 )
 {
 	size_t gid = get_global_id(0);
@@ -122,24 +163,26 @@ __kernel void updateSpace(
 
 	float3 pos = positions[gid].xyz;
 	float3 vel = velocities[gid].xyz;
+	float3 totalAccel = (float3)(0.0f, 0.0f, 0.0f);
 
-	if (gravityEnable) {
-		float3 dir = gravityPos.xyz - pos;
+	for (uint i = 0; i < nGravityPoint; i++) {
+		if (!gPoint[i].active) continue;
+
+		float3 dir = gPoint[i]._Position.xyz - pos;
 		float dist2 = dot(dir, dir) + 0.01f; // epsilon
 		float invDist = rsqrt(dist2);
 		float invDist3 = invDist * invDist * invDist;
 
-		float3 accel = gravityMass * dir * invDist3;
-		vel += accel * dt;
-		pos += vel * dt;
+		float3 accel = gPoint[i]._Mass * dir * invDist3;
+		totalAccel += accel;
 	}
+	vel += totalAccel * dt;
+	pos += vel * dt;
 
 	float speed = length(vel);
 	float scale = 5.0f;
 	float speedNorm = clamp(log(1.0f + speed) / log(1.0f + scale), 0.0f, 1.0f);
 	colors[gid].xyz = (float3)(1.0f - speedNorm, 0.0f, speedNorm);
-
-
 
 	positions[gid].xyz = pos;
 	velocities[gid].xyz = vel;

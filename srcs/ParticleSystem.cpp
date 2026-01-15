@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/13 15:53:34 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 17:11:30 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,11 +20,21 @@ ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.
 	initializeShape(shape);		// Call the first kernel
 
 	_GravityCenter.clear();
+	_GravityCenter.push_back(GravityPoint(0.0f, 0.0f, 0.0f, 1.0f, 50.0f));
+	_nGravityPos = 1;
+	updateGravityBuffer();
 }
 
 ParticleSystem::~ParticleSystem() {
 	if (_initShape) clReleaseKernel(_initShape);
     if (_updateSys) clReleaseKernel(_updateSys);
+	// if (_clProgram) clReleaseProgram(_clProgram);
+	// if (_clPosBuffer) clReleaseMemObject(_clPosBuffer);
+	// if (_clVelBuffer) clReleaseMemObject(_clVelBuffer);
+	// if (_clColBuffer) clReleaseMemObject(_clColBuffer);
+	if (_clGravityBuffer) clReleaseMemObject(_clGravityBuffer);
+	// if (_clQueue) clReleaseCommandQueue(_clQueue);
+	// if (_clContext) clReleaseContext(_clContext);
 }
 
 void ParticleSystem::createBuffers() {
@@ -147,9 +157,13 @@ void ParticleSystem::setKernel(const std::string &shape) {
 	err |= clSetKernelArg(_initShape, 3, sizeof(cl_uint), &nb);
 	err |= clSetKernelArg(_initShape, 4, sizeof(float), &_radius);
 	err |= clSetKernelArg(_initShape, 5, sizeof(int), &flag);
+	
+	int nGravityPoints = static_cast<int>(_GravityCenter.size());
+	err |= clSetKernelArg(_initShape, 6, sizeof(cl_mem), &_clGravityBuffer);
+	err |= clSetKernelArg(_initShape, 7, sizeof(cl_uint), &nGravityPoints);
 
 	if (err != CL_SUCCESS)
-		throw openClError("   \033[33mFailed to set kernel arguments\033[0m");
+		throw openClError("   \033[33mFailed to set kernel init arguments\033[0m");
 	
 	// std::cout << "\033[32minitShape Kernel set succeffully !\033[0m" << std::endl;
 }
@@ -212,16 +226,16 @@ void ParticleSystem::render() {
 	glBindVertexArray(0);
 }
 
-void ParticleSystem::acquireGLObjects() {
-	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
-	clEnqueueAcquireGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
-}
+// void ParticleSystem::acquireGLObjects() {
+// 	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
+// 	clEnqueueAcquireGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
+// }
 
-void ParticleSystem::releaseGLObjects() {
-	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
-	clEnqueueReleaseGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
-	clFlush(_clQueue); // push les commandes ; évite blocage implicite côté GL
-}
+// void ParticleSystem::releaseGLObjects() {
+// 	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
+// 	clEnqueueReleaseGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
+// 	clFlush(_clQueue); // push les commandes ; évite blocage implicite côté GL
+// }
 
 void ParticleSystem::update(float dt) {	
 	// 1 Aquiring OpenGl buffers
@@ -237,14 +251,11 @@ void ParticleSystem::update(float dt) {
 	cl_uint nb = static_cast<cl_uint>(_nbParticle);
 	err |= clSetKernelArg(_updateSys, 3, sizeof(cl_uint), &nb);
 	err |= clSetKernelArg(_updateSys, 4, sizeof(float), &dt);
-	// cl_float4 gravity = {0.0f, -9.8f, 0.0f, 0.0f};
-	// err |= clSetKernelArg(_updateSys, 4, sizeof(cl_float4), &gravity);
-	cl_float4 gravityPos = {0.9f, 0.0f, 0.0f, 0.0f};
-	float gravityMass = 1.0f * 50.f;
-	err |= clSetKernelArg(_updateSys, 5, sizeof(cl_float4), &gravityPos);
-	err |= clSetKernelArg(_updateSys, 6, sizeof(float), &gravityMass);
-	err |= clSetKernelArg(_updateSys, 7, sizeof(int), &_gravityEnable);
-	if (err != CL_SUCCESS) throw openClError("Failed to set kernel arguments");
+
+	int nGravityPoints = static_cast<int>(_GravityCenter.size());
+	err |= clSetKernelArg(_updateSys, 5, sizeof(cl_mem), &_clGravityBuffer);
+	err |= clSetKernelArg(_updateSys, 6, sizeof(cl_uint), &nGravityPoints);
+	if (err != CL_SUCCESS) throw openClError("Failed to set kernel updateSpace arguments");
 
 	// 3 Launch kernel
 	size_t local = 128;
@@ -256,3 +267,41 @@ void ParticleSystem::update(float dt) {
 	clEnqueueReleaseGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
 	clFlush(_clQueue);
 }
+
+
+// Gravity Point Management
+void ParticleSystem::addGravityPoint(float x, float y, float z, float m) {
+	if (_GravityCenter.size() >= 8)
+		return;
+	_GravityCenter.emplace_back(x, y, z, 1.0f, m);
+	_nGravityPos = static_cast<int>(_GravityCenter.size());
+	updateGravityBuffer();
+}
+
+void ParticleSystem::removeGravityPoint(int index) {
+	if (index < 0 || index >= _GravityCenter.size())
+		return;
+
+	_GravityCenter.erase(_GravityCenter.begin() + index);
+	_nGravityPos = static_cast<int>(_GravityCenter.size());
+	updateGravityBuffer();
+}
+
+void ParticleSystem::updateGravityBuffer() {
+	cl_int err;
+
+	if (_clGravityBuffer) {
+		clReleaseMemObject(_clGravityBuffer);
+	}
+
+	_clGravityBuffer = clCreateBuffer(
+		_clContext,
+		CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+		sizeof(GravityPoint) * _GravityCenter.size(),
+		_GravityCenter.data(),
+		&err
+	);
+	if (err != CL_SUCCESS)
+		throw openClError("Failed to create gravity buffer");
+}
+

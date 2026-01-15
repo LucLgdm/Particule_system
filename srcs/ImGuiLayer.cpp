@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/15 12:24:00 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 16:21:04 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,11 +78,13 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 				gPoint[i].getx(), gPoint[i].gety(), gPoint[i].getz(), gPoint[i].getMass());
 		ImGui::SameLine();
 		if (ImGui::Button(("Toggle##" + std::to_string(i)).c_str())) {
-			gPoint[i].active = !gPoint[i].active;
+			gPoint[i].active = (gPoint[i].active == 0) ? 1 : 0;
+			system.updateGravityBuffer();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button(("Remove##" + std::to_string(i)).c_str())) {
-			gPoint.erase(gPoint.begin() + i);
+			// gPoint.erase(gPoint.begin() + i);
+			system.removeGravityPoint(i);
 			std::cout << "Removed gravity point at index " << i << std::endl;
 			if (editingIndex == i) editingIndex = -1;
 			continue;
@@ -100,24 +102,28 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 			if (ImGui::DragFloat(("X##" + std::to_string(i)).c_str(), &x, 0.1f)) {
 				float newPos[4] = {x, gPoint[i].gety(), gPoint[i].getz(), gPoint[i].getMass()};
 				gPoint[i].setPos(newPos);
+				system.updateGravityBuffer();
 			}
 			
 			float y = gPoint[i].gety();
 			if (ImGui::DragFloat(("Y##" + std::to_string(i)).c_str(), &y, 0.1f)) {
 				float newPos[4] = {gPoint[i].getx(), y, gPoint[i].getz(), gPoint[i].getMass()};
 				gPoint[i].setPos(newPos);
+				system.updateGravityBuffer();
 			}
 			
 			float z = gPoint[i].getz();
 			if (ImGui::DragFloat(("Z##" + std::to_string(i)).c_str(), &z, 0.1f)) {
 				float newPos[4] = {gPoint[i].getx(), gPoint[i].gety(), z, gPoint[i].getMass()};
 				gPoint[i].setPos(newPos);
+				system.updateGravityBuffer();
 			}
 			
 			float mass = gPoint[i].getMass();
 			if (ImGui::DragFloat(("Mass##" + std::to_string(i)).c_str(), &mass, 0.1f, 0.0f, 1000.0f)) {
 				float newPos[4] = {gPoint[i].getx(), gPoint[i].gety(), gPoint[i].getz(), mass};
 				gPoint[i].setPos(newPos);
+				system.updateGravityBuffer();
 			}
 			
 			ImGui::Unindent();
