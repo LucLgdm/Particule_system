@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/13 15:21:55 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 12:24:00 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,12 +61,83 @@ void ImGuiLayer::render(ParticleSystem& system, CameraMode& cameraMode) {
 	ImGui::End();
 }
 
+static int editingIndex = -1;
+
 void ImGuiLayer::renderPS(ParticleSystem& system) {
+	auto& gPoint = system.getGravityPoint();
+	ImGui::Text("Gravity Centers: %d / 8", system.getNGravityPos());
+
+	for (int i = 0; i < gPoint.size(); ++i) {
+		if (gPoint[i].getState())
+			ImGui::TextColored(ImVec4(0,1,0,1),
+				"Active  Pos: %.2f %.2f %.2f, mass: %.2f",
+				gPoint[i].getx(), gPoint[i].gety(), gPoint[i].getz(), gPoint[i].getMass());
+		else
+			ImGui::TextColored(ImVec4(1,0,0,1),
+				"Inactive Pos: %.2f %.2f %.2f, mass: %.2f",
+				gPoint[i].getx(), gPoint[i].gety(), gPoint[i].getz(), gPoint[i].getMass());
+		ImGui::SameLine();
+		if (ImGui::Button(("Toggle##" + std::to_string(i)).c_str())) {
+			gPoint[i].active = !gPoint[i].active;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(("Remove##" + std::to_string(i)).c_str())) {
+			gPoint.erase(gPoint.begin() + i);
+			std::cout << "Removed gravity point at index " << i << std::endl;
+			if (editingIndex == i) editingIndex = -1;
+			continue;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(("Modify##" + std::to_string(i)).c_str())) {
+			editingIndex = (editingIndex == i) ? -1 : i;
+		}
+
+
+		if (editingIndex == i) {
+			ImGui::Indent();
+			
+			float x = gPoint[i].getx();
+			if (ImGui::DragFloat(("X##" + std::to_string(i)).c_str(), &x, 0.1f)) {
+				float newPos[4] = {x, gPoint[i].gety(), gPoint[i].getz(), gPoint[i].getMass()};
+				gPoint[i].setPos(newPos);
+			}
+			
+			float y = gPoint[i].gety();
+			if (ImGui::DragFloat(("Y##" + std::to_string(i)).c_str(), &y, 0.1f)) {
+				float newPos[4] = {gPoint[i].getx(), y, gPoint[i].getz(), gPoint[i].getMass()};
+				gPoint[i].setPos(newPos);
+			}
+			
+			float z = gPoint[i].getz();
+			if (ImGui::DragFloat(("Z##" + std::to_string(i)).c_str(), &z, 0.1f)) {
+				float newPos[4] = {gPoint[i].getx(), gPoint[i].gety(), z, gPoint[i].getMass()};
+				gPoint[i].setPos(newPos);
+			}
+			
+			float mass = gPoint[i].getMass();
+			if (ImGui::DragFloat(("Mass##" + std::to_string(i)).c_str(), &mass, 0.1f, 0.0f, 1000.0f)) {
+				float newPos[4] = {gPoint[i].getx(), gPoint[i].gety(), gPoint[i].getz(), mass};
+				gPoint[i].setPos(newPos);
+			}
+			
+			ImGui::Unindent();
+		}
+	}
+
+	static float newPos[4] = {0.f, 0.f, 0.f, 0.f};
+	ImGui::InputFloat4("New gravity position and mass", newPos);
+
+	if (ImGui::Button("Add gravity center")) {
+		system.addGravityPoint(newPos[0], newPos[1], newPos[2], newPos[3]);
+	}
+
+	
 	static bool gravityEnable = 0;
 	if (ImGui::Checkbox("Enable Gravity", &gravityEnable)) {
 		// Update gravity enable in the particle system
 		system.setGravity(gravityEnable);
 	}
+
 
 	static bool resetShpere = false, resetCube = false, resetPyramid = false;
 	ImGui::Checkbox("Sphere", &resetShpere);

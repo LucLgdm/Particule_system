@@ -18,6 +18,8 @@ ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.
 	registerInterop();			// clCreateFromGLBuffer
 	createKernel();				// GPU Kernel
 	initializeShape(shape);		// Call the first kernel
+
+	_GravityCenter.clear();
 }
 
 ParticleSystem::~ParticleSystem() {

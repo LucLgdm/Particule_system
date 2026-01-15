@@ -207,9 +207,7 @@ void Application::run() {
 		updateCam();
 
 		glm::mat4 model = glm::mat4(1.0f);
-
 		glm::mat4 mvp = getProjectionMatrix() * getViewMatrix() * model;
-		
 		glUseProgram(_shaderProgram);
 		
 		GLuint uMVP = glGetUniformLocation(_shaderProgram, "uMVP");

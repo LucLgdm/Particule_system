@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/09 15:56:02 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/15 12:02:56 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,33 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include "exception.hpp"
+
+
+struct GravityPoint {
+	float _Mass;
+	cl_float4 _Position;
+	bool active = false;
+
+	GravityPoint();
+	GravityPoint(float x, float y, float z, float w, float m)
+		: _Position{ x, y, z, w }, _Mass(m) {}
+
+	float getx() const { return _Position.s[0]; };
+	float gety() const { return _Position.s[1]; };
+	float getz() const { return _Position.s[2]; };
+	bool getState() const { return active; };
+	float getMass() const { return _Mass; };
+
+	void setPos(float pos[4]) {
+		_Position.s[0] = pos[0];
+		_Position.s[1] = pos[1];
+		_Position.s[2] = pos[2];
+		_Position.s[3] = pos[3];
+	}
+};
+
 
 class ParticleSystem {
 	public:
@@ -58,13 +84,27 @@ class ParticleSystem {
 		GLuint posBuffer() const { return _posBuffer; };
 		GLuint velBuffer() const { return _velBuffer; };
 		GLuint colBuffer() const { return _colorBuffer; };
+		int getNGravityPos() const { return _nGravityPos; };
+		const std::vector<GravityPoint>& getGravityPoint() const { return _GravityCenter; }
+		std::vector<GravityPoint>& getGravityPoint() { return _GravityCenter; }
 
 		void setGravity(bool gravityEnable) {_gravityEnable = (gravityEnable ? 1 : 0);};
+
+		void addGravityPoint(float x, float y, float z, float m) {
+			if (_GravityCenter.size() >= 8)
+				return;
+
+			_GravityCenter.emplace_back(x, y, z, 1.0f, m);
+			_nGravityPos = static_cast<int>(_GravityCenter.size());
+		}
 		
 	private:
 		size_t _nbParticle;
 		float _radius;
 		int _gravityEnable = 0;
+		int _nGravityPos = 0;
+
+		std::vector<GravityPoint> _GravityCenter;
 
 		// OpenGl
 		GLuint _posBuffer;
@@ -72,7 +112,6 @@ class ParticleSystem {
 		GLuint _colorBuffer;
 		GLuint _vao;
 		
-
 		// OpenCl
 		cl_context _clContext;
 		cl_command_queue _clQueue;
