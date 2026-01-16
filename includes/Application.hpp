@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/15 17:47:39 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/16 15:14:33 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ class Application {
 				_cameraOrbit.update(_window);
 		}
 		void handleFps();
+		void handleKey();
 
 		// Public members for callback access
 		CameraMode		_cameraMode = CameraMode::ORBIT;
@@ -80,8 +81,17 @@ class Application {
 		
 		GLuint _shaderProgram;
 
+		bool _fullscreen = false;
+		GLFWmonitor* _currentMonitor = nullptr;
+		int _windowedX = 100;
+		int _windowedY = 100;
+		int _windowedWidth = WIDTH;
+		int _windowedHeight = HEIGHT;
+		int _currentWidth = WIDTH;
+		int _currentHeight = HEIGHT;
 
 		void checkinput(int, char**);
 		void initGLFW();
 		void initOpenGL();
+		void toggleFullscreen();
 };

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/12 14:10:42 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/15 18:16:51 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/16 15:37:22 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,17 +31,15 @@ CameraOrbit::CameraOrbit(): _target(0.0f, 0.0f, 0.0f), _distance(7.0f), _yaw(-90
 CameraOrbit::~CameraOrbit() {}
 
 void CameraOrbit::update(GLFWwindow* window) {
-	// glm::vec3 forward = normalize(_target - _position);
-	// glm::vec3 right = normalize(cross(forward, _up));
-
-	glm::vec3 forward;
-	forward.x = cos(glm::radians(_pitch)) * cos(glm::radians(_yaw));
-	forward.y = sin(glm::radians(_pitch));
-	forward.z = -cos(glm::radians(_pitch)) * sin(glm::radians(_yaw));
-	forward = normalize(forward);
-	
+	glm::vec3 forward = normalize(_target - _position);	
 	glm::vec3 right = normalize(cross(forward, _up));
+	glm::vec3 up = normalize(cross(right, forward));
 
+	// Get Mouse coordinates
+	double mouseX, mouseY;
+	glfwGetCursorPos(window, &mouseX, &mouseY);
+	_lastX = static_cast<float>(mouseX);
+	_lastY = static_cast<float>(mouseY);
 
 	// Update key states
 	for(auto &keyPair : _keys) {
@@ -52,6 +50,8 @@ void CameraOrbit::update(GLFWwindow* window) {
 	if (_keys[GLFW_KEY_S].isDown) _target -=  forward * _moveSpeed;
 	if (_keys[GLFW_KEY_A].isDown) _target -=  right * _moveSpeed;
 	if (_keys[GLFW_KEY_D].isDown) _target +=  right * _moveSpeed;
+	if (_keys[GLFW_KEY_Q].isDown) _target +=  up * _moveSpeed;
+	if (_keys[GLFW_KEY_E].isDown) _target -=  up * _moveSpeed;
 	
 	updateView();
 }

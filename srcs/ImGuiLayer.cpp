@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/15 17:53:46 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/16 15:41:57 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,6 @@ void ImGuiLayer::beginFrame() {
 	ImGui::NewFrame();
 }
 
-
 /* 
 	ImGui::Begin / End
 	ImGui::Button
@@ -59,6 +58,8 @@ void ImGuiLayer::render(ParticleSystem& system, CameraMode& cameraMode, CameraOr
 	renderPS(system);
 
 	ImGui::End();
+	
+	renderAxisGizmo();
 }
 
 static int editingIndex = -1;
@@ -185,6 +186,8 @@ void ImGuiLayer::renderCamera(CameraMode& cameraMode, CameraOrbit& cameraOrbit) 
 	if (speed != cameraOrbit.getSpeed()) {
 		cameraOrbit.setSpeed(speed);
 	}
+
+	ImGui::Text("Mouse X: %.2f, Mouse Y: %.2f", cameraOrbit.getMouseX(), cameraOrbit.getMouseY());
 }
 
 // End the ImGui frame
@@ -198,5 +201,32 @@ void ImGuiLayer::shutdown() {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+}
+
+void ImGuiLayer::renderAxisGizmo() {
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 150, ImGui::GetIO().DisplaySize.y - 150), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(140, 140), ImGuiCond_Always);
+    ImGui::Begin("##AxisGizmo", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+    
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
+    ImVec2 canvas_size = ImGui::GetContentRegionAvail();
+    
+    ImVec2 center = ImVec2(canvas_pos.x + canvas_size.x * 0.5f, canvas_pos.y + canvas_size.y * 0.5f);
+    float axisLength = 40.0f;
+    
+    // X axis (Red)
+    draw_list->AddLine(center, ImVec2(center.x + axisLength, center.y), IM_COL32(255, 0, 0, 255), 2.0f);
+    draw_list->AddText(ImVec2(center.x + axisLength + 5, center.y - 5), IM_COL32(255, 0, 0, 255), "X");
+    
+    // Y axis (Green)
+    draw_list->AddLine(center, ImVec2(center.x, center.y - axisLength), IM_COL32(0, 255, 0, 255), 2.0f);
+    draw_list->AddText(ImVec2(center.x - 10, center.y - axisLength - 10), IM_COL32(0, 255, 0, 255), "Y");
+    
+    // Z axis (Blue)
+    draw_list->AddLine(center, ImVec2(center.x + axisLength * 0.7f, center.y + axisLength * 0.7f), IM_COL32(0, 0, 255, 255), 2.0f);
+    draw_list->AddText(ImVec2(center.x + axisLength * 0.7f + 5, center.y + axisLength * 0.7f + 5), IM_COL32(0, 0, 255, 255), "Z");
+    
+    ImGui::End();
 }
 

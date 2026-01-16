@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/15 17:49:52 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/16 15:17:00 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -200,6 +200,8 @@ void Application::run() {
 		// Fps
 		handleFps();
 		
+		handleKey();
+		
 		// 1. OpenCL écrit → OpenGL lit
 		_system->update(dt);
 		
@@ -243,5 +245,56 @@ void Application::handleFps() {
 
 		_fps  = 0;
 		_lastFpsTime = currentTime;
+	}
+}
+
+void Application::handleKey() {
+	static bool f11Pressed = false;
+	if (glfwGetKey(_window, GLFW_KEY_F11) == GLFW_PRESS) {
+		if (!f11Pressed) {
+			toggleFullscreen();
+			f11Pressed = true;
+		}
+	} else {
+		f11Pressed = false;
+	}
+
+	if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		glfwSetWindowShouldClose(_window, true);
+	}
+}
+
+void Application::toggleFullscreen() {
+	_fullscreen = !_fullscreen;
+	
+	if (_fullscreen) {
+		// Save position and size of the window
+		glfwGetWindowPos(_window, &_windowedX, &_windowedY);
+		glfwGetWindowSize(_window, &_windowedWidth, &_windowedHeight);
+		
+		// Fullscreen
+		_currentMonitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* mode = glfwGetVideoMode(_currentMonitor);
+		_currentWidth = mode->width;
+		_currentHeight = mode->height;
+		
+		glfwSetWindowMonitor(_window, _currentMonitor, 0, 0, mode->width,
+				mode->height, mode->refreshRate);
+
+		// Update viewport and camera aspect ratio
+		glViewport(0, 0, mode->width, mode->height);
+		_cameraFps.updateProjectionMatrix(mode->width, mode->height); // Reset camera to update aspect ratio
+		_cameraOrbit.updateProjectionMatrix(mode->width, mode->height); // Reset camera to update aspect ratio
+	} else {
+		// Back to windowed mode
+		_currentWidth = _windowedWidth;
+		_currentHeight = _windowedHeight;
+		
+		glfwSetWindowMonitor(_window, nullptr, _windowedX, _windowedY, WIDTH, HEIGHT, 0);
+
+		// Update viewport and camera aspect ratio
+		glViewport(0, 0, _windowedWidth, _windowedHeight);
+		_cameraFps.updateProjectionMatrix(_windowedWidth, _windowedHeight); // Reset camera to update aspect ratio
+		_cameraOrbit.updateProjectionMatrix(_windowedWidth, _windowedHeight); // Reset camera to update aspect ratio
 	}
 }

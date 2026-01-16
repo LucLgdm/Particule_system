@@ -36,6 +36,19 @@ class CameraOrbit {
 		const glm::mat4& getProjectionMatrix() const { return _projectionMatrix; }
 		const float getSpeed() const { return _moveSpeed; }
 		void setSpeed(float speed) { _moveSpeed = speed; }
+
+		float getMouseX() const { return _lastX; }
+		float getMouseY() const { return _lastY; }
+
+		void updateProjectionMatrix(int width, int height) {
+			_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+			_projectionMatrix = glm::perspective(
+				glm::radians(_fov),
+				_aspectRatio,
+				0.1f,
+				3000.0f
+			);
+		}
 	private:
 		// Orbite
 		glm::vec3 _target;

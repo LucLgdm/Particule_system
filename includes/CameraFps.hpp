@@ -38,6 +38,16 @@ class CameraFps {
 		glm::mat4 getViewMatrix() const { return _viewMatrix; };
 		glm::mat4 getProjectionMatrix() const { return _projectionMatrix; };
 
+		void updateProjectionMatrix(int width, int height) {
+			_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+			_projectionMatrix = glm::perspective(
+				glm::radians(_fov),
+				_aspectRatio,
+				0.1f,
+				3000.0f
+			);
+		}
+
 	private:
 		glm::vec3 _position;
 		glm::vec3 _target;
