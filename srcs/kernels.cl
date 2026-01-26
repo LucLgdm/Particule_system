@@ -69,56 +69,47 @@ void createPyramid(float4* positions, size_t gid, const uint n) {
 }
 
 void initSpeed(float4* positions, float4* velocities, size_t gid,
-	__global const  struct GravityPoint* gPoint, const uint nGravityPoint) {
+	__global const struct GravityPoint* gPoint, const uint nGravityPoint) {
 	
-	float3 totalAccel = (float3)(0.0f, 0.0f, 0.0f);
 	float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
-
+	
 	for(uint i = 0; i < nGravityPoint; i++) {
-		//if (!gPoint[i].active) continue;
-
+		if (!gPoint[i].active) continue;
+		
 		float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
 		float dist = length(dir);
 		
-		if (dist < 0.2f) continue; // Trop proche, éviter division par zéro
+		if (dist < 0.2f) continue;
 		
 		float3 dirNorm = dir / dist;
-		
-		// Vitesse orbitale circulaire : v = sqrt(GM/r)
 		float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
 		
-
-		//		Sans variation orbitale
-		// Vecteur perpendiculaire pour la vitesse tangentielle
-		float3 upVector = (float3)(0.0f, 1.0f, 0.0f);
-		if (fabs(dot(dirNorm, upVector)) > 0.9f) {
-			upVector = (float3)(1.0f, 0.0f, 0.0f);
-		}
-		float3 tangent = normalize(cross(dirNorm, upVector));
+		// Axe aléatoire pour la tangente
+		float angle1 = hash(gid * 2u) * 2.0f * PI;
+		float angle2 = hash(gid * 2u + 1u) * PI * 0.5f;
 		
-		// Ajouter une composante aléatoire pour varier les orbites
-		float randomFactor = 0.8f + hash(gid) * 0.4f; // Entre 0.8 et 1.2
-
-		//		Variation d'inclinaison orbitale
-		// Axe de rotation aléatoire pour chaque particule
-		// float angle1 = hash(gid * 2u) * 2.0f * PI;
-		// float angle2 = hash(gid * 2u + 1u) * PI * 0.3f; // Inclinaison max 30°
-		// 
-		// float3 axis = (float3)(
-		// 	sin(angle2) * cos(angle1),
-		// 	cos(angle2),
-		// 	sin(angle2) * sin(angle1)
-		// );
-		// 
-		// float3 tangent = normalize(cross(dirNorm, axis));
-		// 
-		// float randomFactor = 0.7f + hash(gid * 3u) * 0.6f; // 0.7 à 1.3
+		float3 axis = (float3)(
+			sin(angle2) * cos(angle1),
+			cos(angle2),
+			sin(angle2) * sin(angle1)
+		);
 		
-		totalVel += tangent * orbitalSpeed * randomFactor;
+		float3 tangent = normalize(cross(dirNorm, axis));
+		
+		// IMPORTANT : Ajouter une composante radiale aléatoire
+		float radialFactor = (hash(gid * 3u) * 2.0f - 1.0f) * 0.3f; // -0.3 à +0.3
+		float tangentialFactor = 0.7f + hash(gid * 4u) * 0.6f; // 0.7 à 1.3
+		
+		// Vitesse = composante tangentielle + composante radiale
+		float3 velocity = tangent * orbitalSpeed * tangentialFactor 
+		                + dirNorm * orbitalSpeed * radialFactor;
+		
+		totalVel += velocity;
 	}
 	
 	velocities[gid].xyz = totalVel;
 }
+
 
 __kernel void initShape(
 	__global float4* positions,
@@ -155,7 +146,8 @@ __kernel void updateSpace(
 	const uint nbParticles,
 	const float dt,
 	__global const struct GravityPoint* gPoint,
-	const uint nGravityPoint
+	const uint nGravityPoint,
+	const uint colorMode
 )
 {
 	size_t gid = get_global_id(0);
@@ -179,40 +171,48 @@ __kernel void updateSpace(
 	vel += totalAccel * dt;
 	pos += vel * dt;
 
-	float speed = length(vel);
-	float scale = 5.5f;
-	float speedNorm = clamp(log(1.0f + speed) / log(1.0f + scale), 0.0f, 1.0f);
-	colors[gid].xyz = (float3)(1.0f - speedNorm, 0.0f, speedNorm);
+	// Set colors
 
+	float3 color;
+	if (colorMode == 0) {
+		float speed = length(vel);
+		float speedNorm = clamp(speed / 7.0f, 0.0f, 1.0f);
+		speedNorm = speedNorm * speedNorm;  // Courbe quadratique
+
+		float3 coldColor = (float3)(0.3f, 0.0f, 0.8f);   // Violet foncé
+		float3 midColor = (float3)(1.0f, 0.2f, 0.6f);    // Rose
+		float3 hotColor = (float3)(1.0f, 0.8f, 0.0f);    // Jaune-orange
+
+		
+		if (speedNorm < 0.5f) {
+			float t = speedNorm * 2.0f;
+			color = mix(coldColor, midColor, t);
+		} else {
+			float t = (speedNorm - 0.5f) * 2.0f;
+			color = mix(midColor, hotColor, t);
+		}
+	} else {
+		float speed = length(vel);
+		float speedNorm = clamp(speed / 8.0f, 0.0f, 1.0f);
+		speedNorm = 1.0f - exp(-speedNorm * 3.0f);  // Courbe exponentielle inversée
+
+		// Bleu profond → Bleu clair → Blanc → Jaune → Rouge
+		if (speedNorm < 0.3f) {
+			float t = speedNorm / 0.3f;
+			color = mix((float3)(0.0f, 0.0f, 0.3f), (float3)(0.2f, 0.4f, 1.0f), t);
+		} else if (speedNorm < 0.6f) {
+			float t = (speedNorm - 0.3f) / 0.3f;
+			color = mix((float3)(0.2f, 0.4f, 1.0f), (float3)(1.0f, 1.0f, 0.8f), t);
+		} else {
+			float t = (speedNorm - 0.6f) / 0.4f;
+			color = mix((float3)(1.0f, 1.0f, 0.8f), (float3)(1.0f, 0.1f, 0.0f), t);
+		}
+	}
+
+	colors[gid].xyz = color;
 	positions[gid].xyz = pos;
 	velocities[gid].xyz = vel;
 }
 
-// Classic gravity on earth
-__kernel void updateEarth(
-	__global float4* positions,
-	__global float4* velocities,
-	const uint nbParticles,
-	const float dt,
-	const float4 gravity	
-)
-{
-	float speed = 1.0f;
-
-	size_t gid = get_global_id(0);
-	if (gid >= nbParticles) return;
-
-	// Apply gravity
-	velocities[gid] += gravity * dt;
-
-	// update position
-	positions[gid] += velocities[gid] * dt * speed;
-
-	// Rebound on the ground
-	if (positions[gid].y < -0.9f) {
-        positions[gid].y = -0.9f;
-        velocities[gid].y *= -0.8f;
-    }
-}
 
 

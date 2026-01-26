@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/15 17:11:30 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/26 17:44:56 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.
 	initializeShape(shape);		// Call the first kernel
 
 	_GravityCenter.clear();
-	_GravityCenter.push_back(GravityPoint(0.0f, 0.0f, 0.0f, 1.0f, 50.0f));
+	_GravityCenter.push_back(GravityPoint(30.0f, 10.0f, 0.0f, 1.0f, 300.0f));
 	_nGravityPos = 1;
 	updateGravityBuffer();
 }
@@ -255,6 +255,8 @@ void ParticleSystem::update(float dt) {
 	int nGravityPoints = static_cast<int>(_GravityCenter.size());
 	err |= clSetKernelArg(_updateSys, 5, sizeof(cl_mem), &_clGravityBuffer);
 	err |= clSetKernelArg(_updateSys, 6, sizeof(cl_uint), &nGravityPoints);
+	int color = _colorMode ? 1 : 0;
+	err |= clSetKernelArg(_updateSys, 7, sizeof(cl_uint), &color);
 	if (err != CL_SUCCESS) throw openClError("Failed to set kernel updateSpace arguments");
 
 	// 3 Launch kernel
@@ -305,3 +307,14 @@ void ParticleSystem::updateGravityBuffer() {
 		throw openClError("Failed to create gravity buffer");
 }
 
+void ParticleSystem::setGravity(bool gravityEnable) {
+	_gravityEnable = gravityEnable ? 1 : 0;
+	for(auto &gp : _GravityCenter) {
+		if (_gravityEnable == 1) {
+			gp.active = 1;
+		} else {
+			gp.active = 0;
+		}
+	}
+	updateGravityBuffer();
+}

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/26 13:04:24 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/26 17:43:19 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -165,6 +165,14 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 			system.initializeShape("pyramid");
 			resetPyramid = false;
 		}
+	}
+
+	static bool colorMode = false;
+	ImGui::Checkbox("Color Mode", &colorMode);
+	if (colorMode == 0) {
+		system.setColorMode(1);
+	} else {
+		system.setColorMode(0);
 	}
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
