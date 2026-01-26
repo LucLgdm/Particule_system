@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/18 10:18:17 by lde-merc          #+#    #+#              #
-#    Updated: 2026/01/12 14:35:50 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/01/26 12:17:40 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,7 +20,7 @@ vpath %.cpp srcs/ srcs/imGui/
 vpath %.c srcs/
 
 SRC      = main.cpp Application.cpp ParticleSystem.cpp CameraFps.cpp ImGuiLayer.cpp \
-		   CameraOrbit.cpp \
+		   CameraOrbit.cpp AxisGizmo.cpp \
 		   imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp imgui_impl_glfw.cpp \
 		   imgui_impl_opengl3.cpp imgui.cpp
 SRCC     = glad.c

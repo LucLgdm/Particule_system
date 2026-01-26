@@ -40,6 +40,7 @@ class CameraOrbit {
 		float getMouseX() const { return _lastX; }
 		float getMouseY() const { return _lastY; }
 
+		glm::vec3 getPosition() const { return _position; }
 		void updateProjectionMatrix(int width, int height) {
 			_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 			_projectionMatrix = glm::perspective(

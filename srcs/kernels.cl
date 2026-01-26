@@ -80,7 +80,7 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 		float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
 		float dist = length(dir);
 		
-		if (dist < 0.1f) continue; // Trop proche, éviter division par zéro
+		if (dist < 0.2f) continue; // Trop proche, éviter division par zéro
 		
 		float3 dirNorm = dir / dist;
 		
@@ -180,7 +180,7 @@ __kernel void updateSpace(
 	pos += vel * dt;
 
 	float speed = length(vel);
-	float scale = 5.0f;
+	float scale = 5.5f;
 	float speedNorm = clamp(log(1.0f + speed) / log(1.0f + scale), 0.0f, 1.0f);
 	colors[gid].xyz = (float3)(1.0f - speedNorm, 0.0f, speedNorm);
 

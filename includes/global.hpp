@@ -6,12 +6,11 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/13 11:54:51 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/13 11:55:49 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/26 12:26:31 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-
 
 static int HEIGHT = 1200;
 static int WIDTH = 1600;

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/16 15:17:00 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/26 12:21:39 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -181,6 +181,7 @@ void Application::initShader() {
 }
 
 void Application::cleanup() {
+	_axisGizmo.cleanup();
 	if (_shaderProgram) glDeleteProgram(_shaderProgram);
 	glfwDestroyWindow(_window);
 	glfwTerminate();
@@ -189,6 +190,7 @@ void Application::cleanup() {
 void Application::run() {
 	_lastFrameTime = glfwGetTime();
 	_lastFpsTime = _lastFrameTime;
+	_axisGizmo.init(_shaderProgram);
 	
 	while (!glfwWindowShouldClose(_window)) {
 		float currentTime = glfwGetTime();
@@ -220,6 +222,8 @@ void Application::run() {
 		
 		_system->render();
 		glFlush();
+		
+		_axisGizmo.render(getViewMatrix(), getProjectionMatrix(), 0.1f, glm::vec3(0.0f, 0.0f, 0.0f));
 
 		_imguiLayer.beginFrame();
 		_imguiLayer.render(*_system, _cameraMode, _cameraOrbit);

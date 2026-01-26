@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/16 15:14:33 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/26 12:15:30 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@
 #include "exception.hpp"
 #include "ParticleSystem.hpp"
 #include "ImGuiLayer.hpp"
-
+#include "AxisGizmo.hpp"
 
 
 class Application {
@@ -89,7 +89,8 @@ class Application {
 		int _windowedHeight = HEIGHT;
 		int _currentWidth = WIDTH;
 		int _currentHeight = HEIGHT;
-
+		AxisGizmo	_axisGizmo;
+		
 		void checkinput(int, char**);
 		void initGLFW();
 		void initOpenGL();

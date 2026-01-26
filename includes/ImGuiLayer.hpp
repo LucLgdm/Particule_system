@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:59 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/16 14:26:35 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/26 11:45:49 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ class ImGuiLayer {
 		void endFrame();
 		void shutdown();
 
-		void renderAxisGizmo();
+		void renderAxisGizmo(const CameraOrbit&);
 	private:
 
 };

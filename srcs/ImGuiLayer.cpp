@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/16 15:41:57 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/26 13:04:24 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ void ImGuiLayer::render(ParticleSystem& system, CameraMode& cameraMode, CameraOr
 
 	ImGui::End();
 	
-	renderAxisGizmo();
+	renderAxisGizmo(cameraOrbit);
 }
 
 static int editingIndex = -1;
@@ -187,7 +187,8 @@ void ImGuiLayer::renderCamera(CameraMode& cameraMode, CameraOrbit& cameraOrbit) 
 		cameraOrbit.setSpeed(speed);
 	}
 
-	ImGui::Text("Mouse X: %.2f, Mouse Y: %.2f", cameraOrbit.getMouseX(), cameraOrbit.getMouseY());
+	glm::vec3 pos = cameraOrbit.getPosition();
+	ImGui::Text("Cam X: %.2f, Cam Y: %.2f, Cam Z: %.2f", pos.x, pos.y, pos.z);
 }
 
 // End the ImGui frame
@@ -203,30 +204,54 @@ void ImGuiLayer::shutdown() {
 	ImGui::DestroyContext();
 }
 
-void ImGuiLayer::renderAxisGizmo() {
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 150, ImGui::GetIO().DisplaySize.y - 150), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(140, 140), ImGuiCond_Always);
-    ImGui::Begin("##AxisGizmo", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
-    
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
-    ImVec2 canvas_size = ImGui::GetContentRegionAvail();
-    
-    ImVec2 center = ImVec2(canvas_pos.x + canvas_size.x * 0.5f, canvas_pos.y + canvas_size.y * 0.5f);
-    float axisLength = 40.0f;
-    
-    // X axis (Red)
-    draw_list->AddLine(center, ImVec2(center.x + axisLength, center.y), IM_COL32(255, 0, 0, 255), 2.0f);
-    draw_list->AddText(ImVec2(center.x + axisLength + 5, center.y - 5), IM_COL32(255, 0, 0, 255), "X");
-    
-    // Y axis (Green)
-    draw_list->AddLine(center, ImVec2(center.x, center.y - axisLength), IM_COL32(0, 255, 0, 255), 2.0f);
-    draw_list->AddText(ImVec2(center.x - 10, center.y - axisLength - 10), IM_COL32(0, 255, 0, 255), "Y");
-    
-    // Z axis (Blue)
-    draw_list->AddLine(center, ImVec2(center.x + axisLength * 0.7f, center.y + axisLength * 0.7f), IM_COL32(0, 0, 255, 255), 2.0f);
-    draw_list->AddText(ImVec2(center.x + axisLength * 0.7f + 5, center.y + axisLength * 0.7f + 5), IM_COL32(0, 0, 255, 255), "Z");
-    
-    ImGui::End();
+void ImGuiLayer::renderAxisGizmo(const CameraOrbit& camera) {
+	ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 150, ImGui::GetIO().DisplaySize.y - 150), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(140, 140), ImGuiCond_Always);
+	ImGui::Begin("##AxisGizmo", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+	
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+	ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
+	ImVec2 canvas_size = ImGui::GetContentRegionAvail();
+	
+	ImVec2 center = ImVec2(canvas_pos.x + canvas_size.x * 0.5f, canvas_pos.y + canvas_size.y * 0.5f);
+	float axisLength = 40.0f;
+	
+	// Les axes du monde en coordonnées homogènes
+	glm::vec4 xAxis = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+	glm::vec4 yAxis = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+	glm::vec4 zAxis = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+	
+	// Note: à adapter si vous avez accès à la caméra via un paramètre
+	// Pour maintenant, vous devrez passer la matrice de vue en paramètre
+	
+	// Appliquer la rotation de la caméra aux axes
+	glm::mat4 viewMatrix = camera.getViewMatrix();
+	glm::mat3 rotation = glm::mat3(viewMatrix);
+	xAxis = glm::vec4(rotation * glm::vec3(xAxis), 0.0f);
+	yAxis = glm::vec4(rotation * glm::vec3(yAxis), 0.0f);
+	zAxis = glm::vec4(rotation * glm::vec3(zAxis), 0.0f);
+	
+	// Conversion en coordonnées écran (projection 2D simple)
+	auto projectAxis = [&center, &axisLength](glm::vec3 axis) -> ImVec2 {
+		return ImVec2(center.x + axis.x * axisLength, center.y - axis.y * axisLength);
+	};
+	
+	ImVec2 xEnd = projectAxis(glm::vec3(xAxis));
+	ImVec2 yEnd = projectAxis(glm::vec3(yAxis));
+	ImVec2 zEnd = projectAxis(glm::vec3(zAxis));
+	
+	// X axis (Red)
+	draw_list->AddLine(center, xEnd, IM_COL32(255, 0, 0, 255), 2.0f);
+	draw_list->AddText(ImVec2(xEnd.x + 5, xEnd.y - 5), IM_COL32(255, 0, 0, 255), "X");
+	
+	// Y axis (Green)
+	draw_list->AddLine(center, yEnd, IM_COL32(0, 255, 0, 255), 2.0f);
+	draw_list->AddText(ImVec2(yEnd.x - 10, yEnd.y - 10), IM_COL32(0, 255, 0, 255), "Y");
+	
+	// Z axis (Blue)
+	draw_list->AddLine(center, zEnd, IM_COL32(0, 0, 255, 255), 2.0f);
+	draw_list->AddText(ImVec2(zEnd.x + 5, zEnd.y + 5), IM_COL32(0, 0, 255, 255), "Z");
+	
+	ImGui::End();
 }
 
