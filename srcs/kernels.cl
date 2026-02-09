@@ -68,9 +68,77 @@ void createPyramid(float4* positions, size_t gid, const uint n) {
 	positions[gid] = (float4)(x, y, z, 1.0f);
 }
 
-void initSpeed(float4* positions, float4* velocities, size_t gid,
-	__global const struct GravityPoint* gPoint, const uint nGravityPoint) {
+float3 getSurfaceNormal(float4 position, size_t gid, const uint nbParticles, const int shapeFlag) {
+	float3 normal = (float3)(0.0f, 0.0f, 0.0f);
 	
+	if (shapeFlag == 0) {
+		// Sphère : normale = direction depuis le centre
+		normal = normalize(position.xyz);
+		
+	} else if (shapeFlag == 1) {
+		// Cube : normale = face la plus proche
+		float3 p = position.xyz;
+		float3 absP = fabs(p);
+		
+		if (absP.x > absP.y && absP.x > absP.z) {
+			normal = (float3)(sign(p.x), 0.0f, 0.0f);
+		} else if (absP.y > absP.z) {
+			normal = (float3)(0.0f, sign(p.y), 0.0f);
+		} else {
+			normal = (float3)(0.0f, 0.0f, sign(p.z));
+		}
+		
+	} else if (shapeFlag == 2) {
+		// Pyramide : normale dépend de la face
+		float3 p = position.xyz;
+		
+		if (p.y < 0.1f) {
+			// Base de la pyramide
+			normal = (float3)(0.0f, -1.0f, 0.0f);
+		} else {
+			// Faces inclinées : normale pointe vers l'extérieur et vers le haut
+			float3 toCenter = -normalize((float3)(p.x, 0.0f, p.z));
+			normal = normalize((float3)(toCenter.x, 0.5f, toCenter.z));
+		}
+	}
+	
+	return normal;
+}
+
+void initSpeed(float4* positions, float4* velocities, size_t gid,
+	__global const struct GravityPoint* gPoint, const uint nGravityPoint,
+	const uint nbParticles, const int shapeFlag) {
+	
+	// Obtenir la normale de surface
+	float3 normal = getSurfaceNormal(positions[gid], gid, nbParticles, shapeFlag);
+	
+	// Vitesse de base selon la normale
+	float baseSpeed = 1.0f + hash(gid) * 3.0f; // Vitesse entre 1 et 3
+	float3 normalVel = normal * baseSpeed;
+	
+	// Option 1 : Uniquement normale
+	velocities[gid].xyz = normalVel;
+	
+	// Option 2 : Normale + composante orbitale (mix)
+	/* float3 orbitalVel = (float3)(0.0f, 0.0f, 0.0f);
+	for(uint i = 0; i < nGravityPoint; i++) {
+		if (!gPoint[i].active) continue;
+		
+		float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
+		float dist = length(dir);
+		if (dist < 0.2f) continue;
+		
+		float3 dirNorm = dir / dist;
+		float orbitalSpeed = sqrt(gPoint[i]._Mass / dist) * 0.3f;
+		
+		float3 up = (fabs(dirNorm.y) < 0.9f) ? (float3)(0,1,0) : (float3)(1,0,0);
+		float3 tangent = normalize(cross(dirNorm, up));
+		
+		orbitalVel += tangent * orbitalSpeed;
+	}
+	velocities[gid].xyz = normalVel * 0.7f + orbitalVel * 0.3f;
+	*/
+/*
 	float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
 	
 	for(uint i = 0; i < nGravityPoint; i++) {
@@ -108,8 +176,8 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 	}
 	
 	velocities[gid].xyz = totalVel;
+*/
 }
-
 
 __kernel void initShape(
 	__global float4* positions,
@@ -131,11 +199,7 @@ __kernel void initShape(
 		createPyramid(positions, gid, nbParticles);
 	}
 	
-	initSpeed(positions, velocities, gid, gPoint, nGravityPoint);
-	// velocities[gid] = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
-
-	
-	// colors[gid] = (float4)(1.0f, 0.5f, 1.0f, 1.0f);
+	initSpeed(positions, velocities, gid, gPoint, nGravityPoint, nbParticles, flag);
 }
 
 // Gravity in space
@@ -169,7 +233,15 @@ __kernel void updateSpace(
 		totalAccel += accel;
 	}
 	vel += totalAccel * dt;
+	if (length(vel) > 35.0f)
+		vel /= 15.0f;
+
 	pos += vel * dt;
+	for(uint i = 0; i < nGravityPoint; i++) {
+		float3 diff = pos - gPoint[i]._Position.xyz;
+		if ( diff.x == 0.0f && diff.y == 0.0f && diff.z == 0.0f)
+			pos += 5.0f;
+	}
 
 	// Set colors
 

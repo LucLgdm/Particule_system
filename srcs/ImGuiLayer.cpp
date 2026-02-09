@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/26 17:43:19 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/01/27 10:56:57 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,17 +141,16 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	
 	static bool gravityEnable = 0;
 	if (ImGui::Checkbox("Enable Gravity", &gravityEnable)) {
-		// Update gravity enable in the particle system
 		system.setGravity(gravityEnable);
 	}
 
 
 	static bool resetShpere = false, resetCube = false, resetPyramid = false;
-	ImGui::Checkbox("Sphere", &resetShpere);
+	if (ImGui::Checkbox("Sphere", &resetShpere)) resetCube = false, resetPyramid = false;
 	ImGui::SameLine();
-	ImGui::Checkbox("Cube", &resetCube);
+	if (ImGui::Checkbox("Cube", &resetCube)) resetShpere = false, resetPyramid = false;
 	ImGui::SameLine();
-	ImGui::Checkbox("Pyramid", &resetPyramid);
+	if (ImGui::Checkbox("Pyramid", &resetPyramid)) resetShpere = false, resetCube = false;
 
 	ImGui::Button("Reset Particles");
 	if (ImGui::IsItemClicked() && (resetShpere || resetCube || resetPyramid)) {
@@ -167,12 +166,14 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 		}
 	}
 
-	static bool colorMode = false;
-	ImGui::Checkbox("Color Mode", &colorMode);
-	if (colorMode == 0) {
-		system.setColorMode(1);
-	} else {
+	static bool color1 = true, color2 = false;
+	if (ImGui::Checkbox("Color 1", &color1)) color2 = false;
+	ImGui::SameLine();
+	if (ImGui::Checkbox("Color 2", &color2)) color1 = false;
+	if (color1) {
 		system.setColorMode(0);
+	} else if (color2) {
+		system.setColorMode(1);
 	}
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 

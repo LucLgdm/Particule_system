@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/18 10:18:17 by lde-merc          #+#    #+#              #
-#    Updated: 2026/01/26 12:17:40 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/02/09 10:37:28 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -34,7 +34,7 @@ DEP      = $(OBJ:.o=.d)
 # Target executable
 NAME     = Particule_system
 
-# Default target
+## Build the project
 all: $(NAME)
 
 # Link
@@ -52,26 +52,34 @@ $(OBJDIR)/glad.o: $(SRCC)
 	@mkdir -p $(@D)
 	@$(CPP) $(FLAGS) -c $< -o $@
 
-# Clean object files
+## Clean object files
 clean:
 	@rm -rf $(OBJDIR)
 	@echo "\033[34mDeleted object files!\033[0m"
 	@rm imgui.ini || true 
 
-# Clean object files + executable
+## Clean object files + executable
 fclean: clean
 	@rm -f $(NAME)
 	@echo "\033[35mDeleted everything!\033[0m"
 
-# Rebuild
+## Rebuild
 re: fclean all
 	@echo "\033[33mRebuild done!\033[0m"
 
+## Run with Valgrind
 val: all
 	valgrind --leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=definite ./$(NAME) resources/42.obj || true
+
+## Display the help
+help:
+	@awk 'BEGIN {FS = ":.*##"} \
+		/^[a-zA-Z_-]+:.*##/ { \
+			printf "  %-10s %s\n", $$1, $$2 \
+		}' $(MAKEFILE_LIST)
 
 # Include dependencies
 -include $(DEP)
 
 # Phony targets
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re help val
