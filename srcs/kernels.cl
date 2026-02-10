@@ -31,8 +31,7 @@ void createSphere(float radius, float4* positions, size_t gid, uint n) {
 		positions[gid].w = 1.0f;
 }
 
-void createCube(float4* positions, size_t gid) {
-	float baseCube = 3.0;
+void createCube(float baseCube, float4* positions, size_t gid) {
 	float x = (hash(gid * 3u + 0u) * 2.0f - 1.0f) * baseCube / 2.0f;
 	float y = (hash(gid * 3u + 1u) * 2.0f - 1.0f) * baseCube / 2.0f ;
 	float z = (hash(gid * 3u + 2u) * 2.0f - 1.0f) * baseCube / 2.0f ;
@@ -118,7 +117,7 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 		float3 normalVel = normal * baseSpeed;
 		
 		// Option 1 : Uniquement normale
-		velocities[gid].xyz = normalVel;
+		// velocities[gid].xyz = normalVel;
 		
 		// Option 2 : Normale + composante orbitale (mix)
 		float3 orbitalVel = (float3)(0.0f, 0.0f, 0.0f);
@@ -138,7 +137,7 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 			orbitalVel += tangent * orbitalSpeed;
 		}
 		velocities[gid].xyz = normalVel * 0.7f + orbitalVel * 0.3f;
-	} else if (speed == 2){
+	} else if (speed == 2) {
 		float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
 		
 		for(uint i = 0; i < nGravityPoint; i++) {
@@ -192,10 +191,13 @@ __kernel void initShape(
 	size_t gid = get_global_id(0);
 	if (gid >= nbParticles) return;
 
+	if (gid == 0)
+		printf("nb=%u radius=%f\n", nbParticles, radius);
+
 	if (flag == 0) { // Sphere
 		createSphere(radius, positions, gid, nbParticles);
 	} else if (flag == 1) { // Cube
-		createCube(positions, gid);
+		createCube(radius, positions, gid);
 	} else if (flag == 2) { // Pyramide
 		createPyramid(positions, gid, nbParticles);
 	}

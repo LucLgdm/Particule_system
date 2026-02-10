@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/10 12:41:06 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/10 14:34:55 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,7 +146,7 @@ void ParticleSystem::createKernel() {
 void ParticleSystem::setKernel(const std::string &shape) {
 	cl_int err;
 	int flag = (shape == "sphere" ? 0 : (shape == "cube" ? 1 : 2));
-	// std::cout << "\033[36mSetting kernel arguments...\033[0m" << std::endl;
+
 	// Buffer arguments
 	err  = clSetKernelArg(_initShape, 0, sizeof(cl_mem), &_clPosBuffer);
 	err |= clSetKernelArg(_initShape, 1, sizeof(cl_mem), &_clVelBuffer);
@@ -165,8 +165,6 @@ void ParticleSystem::setKernel(const std::string &shape) {
 
 	if (err != CL_SUCCESS)
 		throw openClError("   \033[33mFailed to set kernel init arguments\033[0m");
-	
-	// std::cout << "\033[32minitShape Kernel set succeffully !\033[0m" << std::endl;
 }
 
 // Aquires the OpenGl buffers for OpenCl access
@@ -193,8 +191,10 @@ void ParticleSystem::initializeShape(const std::string& shape) {
 	// std::cout << "\033[32mudpateSpace Kernel set succeffully !\033[0m" << std::endl;
 
 	// 3 Launch kernel
+	size_t local = 128;
+	size_t global = ((static_cast<size_t>(_nbParticle) + local - 1) / local) * local;
 	clEnqueueNDRangeKernel(_clQueue, _initShape, 1,
-		nullptr, &_nbParticle, nullptr, 0, nullptr, nullptr);
+		nullptr, &global, &local, 0, nullptr, nullptr);
 	
 	// 4 Release buffers back to OpenGl
 	clEnqueueReleaseGLObjects(_clQueue, 3, buffer, 0, nullptr, nullptr);
