@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/26 17:44:56 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/10 12:41:06 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -161,6 +161,7 @@ void ParticleSystem::setKernel(const std::string &shape) {
 	int nGravityPoints = static_cast<int>(_GravityCenter.size());
 	err |= clSetKernelArg(_initShape, 6, sizeof(cl_mem), &_clGravityBuffer);
 	err |= clSetKernelArg(_initShape, 7, sizeof(cl_uint), &nGravityPoints);
+	err |= clSetKernelArg(_initShape, 8, sizeof(cl_uint), &_speed);
 
 	if (err != CL_SUCCESS)
 		throw openClError("   \033[33mFailed to set kernel init arguments\033[0m");

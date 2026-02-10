@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/27 10:56:57 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/10 12:48:32 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,15 +145,24 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	}
 
 
+	if (ImGui::DragInt("Particle count", &(system.getNGravityPos()) , 1, 1, 5000000);)
+
 	static bool resetShpere = false, resetCube = false, resetPyramid = false;
 	if (ImGui::Checkbox("Sphere", &resetShpere)) resetCube = false, resetPyramid = false;
 	ImGui::SameLine();
 	if (ImGui::Checkbox("Cube", &resetCube)) resetShpere = false, resetPyramid = false;
 	ImGui::SameLine();
 	if (ImGui::Checkbox("Pyramid", &resetPyramid)) resetShpere = false, resetCube = false;
+	
+	static bool initSpeed_1 = false, initSpeed_2 = false;
+	if (ImGui::Checkbox("Speed 1", &initSpeed_1)) initSpeed_2 = false;
+	ImGui::SameLine();
+	if (ImGui::Checkbox("Speed 2", &initSpeed_2)) initSpeed_1 = false;
+
 
 	ImGui::Button("Reset Particles");
-	if (ImGui::IsItemClicked() && (resetShpere || resetCube || resetPyramid)) {
+	if (ImGui::IsItemClicked() && (resetShpere || resetCube || resetPyramid) && (initSpeed_1 || initSpeed_2)) {
+		system.setSpeed(initSpeed_1 ? 1 : 2);
 		if (resetShpere) {
 			system.initializeShape("sphere");
 			resetShpere = false;
@@ -164,6 +173,7 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 			system.initializeShape("pyramid");
 			resetPyramid = false;
 		}
+		initSpeed_1 = initSpeed_2 = false;
 	}
 
 	static bool color1 = true, color2 = false;

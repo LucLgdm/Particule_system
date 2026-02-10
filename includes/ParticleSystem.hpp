@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/26 17:39:40 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/10 12:42:13 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,6 +91,8 @@ class ParticleSystem {
 
 		void setGravity(bool);
 
+		void setSpeed(int speed) { _speed = speed; };
+
 		bool& getColorMode() { return _colorMode; };
 		void setColorMode(bool mode) { _colorMode = mode; };
 
@@ -105,6 +107,7 @@ class ParticleSystem {
 		int _gravityEnable = 0;
 		int _nGravityPos = 0;
 		bool _colorMode = false;
+		int _speed = 0;
 
 		std::vector<GravityPoint> _GravityCenter;
 

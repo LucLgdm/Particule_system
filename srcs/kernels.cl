@@ -107,76 +107,76 @@ float3 getSurfaceNormal(float4 position, size_t gid, const uint nbParticles, con
 
 void initSpeed(float4* positions, float4* velocities, size_t gid,
 	__global const struct GravityPoint* gPoint, const uint nGravityPoint,
-	const uint nbParticles, const int shapeFlag) {
+	const uint nbParticles, const int shapeFlag, uint speed) {
 	
-	// Obtenir la normale de surface
-	float3 normal = getSurfaceNormal(positions[gid], gid, nbParticles, shapeFlag);
-	
-	// Vitesse de base selon la normale
-	float baseSpeed = 1.0f + hash(gid) * 3.0f; // Vitesse entre 1 et 3
-	float3 normalVel = normal * baseSpeed;
-	
-	// Option 1 : Uniquement normale
-	velocities[gid].xyz = normalVel;
-	
-	// Option 2 : Normale + composante orbitale (mix)
-	/* float3 orbitalVel = (float3)(0.0f, 0.0f, 0.0f);
-	for(uint i = 0; i < nGravityPoint; i++) {
-		if (!gPoint[i].active) continue;
+	if (speed == 1) {
+		// Obtenir la normale de surface
+		float3 normal = getSurfaceNormal(positions[gid], gid, nbParticles, shapeFlag);
 		
-		float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
-		float dist = length(dir);
-		if (dist < 0.2f) continue;
+		// Vitesse de base selon la normale
+		float baseSpeed = 1.0f + hash(gid) * 3.0f; // Vitesse entre 1 et 3
+		float3 normalVel = normal * baseSpeed;
 		
-		float3 dirNorm = dir / dist;
-		float orbitalSpeed = sqrt(gPoint[i]._Mass / dist) * 0.3f;
+		// Option 1 : Uniquement normale
+		velocities[gid].xyz = normalVel;
 		
-		float3 up = (fabs(dirNorm.y) < 0.9f) ? (float3)(0,1,0) : (float3)(1,0,0);
-		float3 tangent = normalize(cross(dirNorm, up));
+		// Option 2 : Normale + composante orbitale (mix)
+		float3 orbitalVel = (float3)(0.0f, 0.0f, 0.0f);
+		for(uint i = 0; i < nGravityPoint; i++) {
+			if (!gPoint[i].active) continue;
+			
+			float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
+			float dist = length(dir);
+			if (dist < 0.2f) continue;
+			
+			float3 dirNorm = dir / dist;
+			float orbitalSpeed = sqrt(gPoint[i]._Mass / dist) * 0.3f;
+			
+			float3 up = (fabs(dirNorm.y) < 0.9f) ? (float3)(0,1,0) : (float3)(1,0,0);
+			float3 tangent = normalize(cross(dirNorm, up));
+			
+			orbitalVel += tangent * orbitalSpeed;
+		}
+		velocities[gid].xyz = normalVel * 0.7f + orbitalVel * 0.3f;
+	} else if (speed == 2){
+		float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
 		
-		orbitalVel += tangent * orbitalSpeed;
+		for(uint i = 0; i < nGravityPoint; i++) {
+			if (!gPoint[i].active) continue;
+			
+			float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
+			float dist = length(dir);
+			
+			if (dist < 0.2f) continue;
+			
+			float3 dirNorm = dir / dist;
+			float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
+			
+			// Axe aléatoire pour la tangente
+			float angle1 = hash(gid * 2u) * 2.0f * PI;
+			float angle2 = hash(gid * 2u + 1u) * PI * 0.5f;
+			
+			float3 axis = (float3)(
+				sin(angle2) * cos(angle1),
+				cos(angle2),
+				sin(angle2) * sin(angle1)
+			);
+			
+			float3 tangent = normalize(cross(dirNorm, axis));
+			
+			// IMPORTANT : Ajouter une composante radiale aléatoire
+			float radialFactor = (hash(gid * 3u) * 2.0f - 1.0f) * 0.3f; // -0.3 à +0.3
+			float tangentialFactor = 0.7f + hash(gid * 4u) * 0.6f; // 0.7 à 1.3
+			
+			// Vitesse = composante tangentielle + composante radiale
+			float3 velocity = tangent * orbitalSpeed * tangentialFactor 
+							+ dirNorm * orbitalSpeed * radialFactor;
+			
+			totalVel += velocity;
+		}
+		
+		velocities[gid].xyz = totalVel;
 	}
-	velocities[gid].xyz = normalVel * 0.7f + orbitalVel * 0.3f;
-	*/
-/*
-	float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
-	
-	for(uint i = 0; i < nGravityPoint; i++) {
-		if (!gPoint[i].active) continue;
-		
-		float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
-		float dist = length(dir);
-		
-		if (dist < 0.2f) continue;
-		
-		float3 dirNorm = dir / dist;
-		float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
-		
-		// Axe aléatoire pour la tangente
-		float angle1 = hash(gid * 2u) * 2.0f * PI;
-		float angle2 = hash(gid * 2u + 1u) * PI * 0.5f;
-		
-		float3 axis = (float3)(
-			sin(angle2) * cos(angle1),
-			cos(angle2),
-			sin(angle2) * sin(angle1)
-		);
-		
-		float3 tangent = normalize(cross(dirNorm, axis));
-		
-		// IMPORTANT : Ajouter une composante radiale aléatoire
-		float radialFactor = (hash(gid * 3u) * 2.0f - 1.0f) * 0.3f; // -0.3 à +0.3
-		float tangentialFactor = 0.7f + hash(gid * 4u) * 0.6f; // 0.7 à 1.3
-		
-		// Vitesse = composante tangentielle + composante radiale
-		float3 velocity = tangent * orbitalSpeed * tangentialFactor 
-		                + dirNorm * orbitalSpeed * radialFactor;
-		
-		totalVel += velocity;
-	}
-	
-	velocities[gid].xyz = totalVel;
-*/
 }
 
 __kernel void initShape(
@@ -186,7 +186,8 @@ __kernel void initShape(
 	const uint nbParticles,
 	const float radius, const int flag,
 	__global const struct GravityPoint* gPoint,
-	const uint nGravityPoint)
+	const uint nGravityPoint,
+	const uint speed)
 {
 	size_t gid = get_global_id(0);
 	if (gid >= nbParticles) return;
@@ -199,7 +200,7 @@ __kernel void initShape(
 		createPyramid(positions, gid, nbParticles);
 	}
 	
-	initSpeed(positions, velocities, gid, gPoint, nGravityPoint, nbParticles, flag);
+	initSpeed(positions, velocities, gid, gPoint, nGravityPoint, nbParticles, flag, speed);
 }
 
 // Gravity in space
