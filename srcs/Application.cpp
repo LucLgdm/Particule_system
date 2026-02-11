@@ -6,11 +6,13 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/26 12:21:39 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/11 19:09:25 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Application.hpp"
+
+static bool hPressed = true;
 
 // Constructeur
 Application::Application() {}
@@ -48,7 +50,8 @@ void Application::checkinput(int argc, char **argv) {
 		ostringstream oss;
 		oss << "   The program needs 2 arguments: " << std::endl;
 		oss << "      \033[33m_the number of particle" << std::endl;
-		oss << "      _the shape (sphere or cube)\033[0m" << std::endl;
+		oss << "      _the shape (sphere or cube)" << std::endl;
+		oss << "	  Everything can be change while playing!\033[0m" << std::endl;
 		throw inputError(oss.str());
 	}
 
@@ -224,10 +227,12 @@ void Application::run() {
 		glFlush();
 		
 		_axisGizmo.render(getViewMatrix(), getProjectionMatrix(), 0.1f, glm::vec3(0.0f, 0.0f, 0.0f));
-
-		_imguiLayer.beginFrame();
-		_imguiLayer.render(*_system, _cameraMode, _cameraOrbit);
-		_imguiLayer.endFrame();
+		
+		if (hPressed) {	
+			_imguiLayer.beginFrame();
+			_imguiLayer.render(*_system, _cameraMode, _cameraOrbit);
+			_imguiLayer.endFrame();
+		}
 
 		glfwSwapBuffers(_window);
 		glfwPollEvents();
@@ -253,19 +258,39 @@ void Application::handleFps() {
 }
 
 void Application::handleKey() {
+	
+	// --- Fullscreen toggle ---
 	static bool f11Pressed = false;
-	if (glfwGetKey(_window, GLFW_KEY_F11) == GLFW_PRESS) {
-		if (!f11Pressed) {
-			toggleFullscreen();
-			f11Pressed = true;
-		}
-	} else {
-		f11Pressed = false;
+	bool f11Now = (glfwGetKey(_window, GLFW_KEY_F11) == GLFW_PRESS);
+	if (f11Now && !f11Pressed) {
+		toggleFullscreen();   // ta fonction qui gère le passage full screen
+	}
+	f11Pressed = f11Now;
+
+	// --- UI toggle ---
+	bool hNow = (glfwGetKey(_window, GLFW_KEY_H) == GLFW_PRESS);
+	static bool hHandled = false;
+	if (hNow && !hHandled) {
+		hPressed = !hPressed;
+		hHandled = true;
+	} else if (!hNow) {
+		hHandled = false;
 	}
 
-	if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		glfwSetWindowShouldClose(_window, true);
+	// --- Escape to quit if not in fullscreen mode ---
+	static bool escPressed = false;
+	bool escNow = (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS);
+
+	if (escNow && !escPressed) {
+		GLFWmonitor* monitor = glfwGetWindowMonitor(_window);
+
+		if (monitor) {
+			toggleFullscreen();
+		} else {
+			glfwSetWindowShouldClose(_window, true);
+		}
 	}
+	escPressed = escNow;
 }
 
 void Application::toggleFullscreen() {
