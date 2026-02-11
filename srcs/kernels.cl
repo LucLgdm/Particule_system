@@ -191,9 +191,8 @@ __kernel void initShape(
 	size_t gid = get_global_id(0);
 	if (gid >= nbParticles) return;
 
-	if (gid == 0)
-		printf("nb=%u radius=%f\n", nbParticles, radius);
-
+    if (gid == 0)
+        printf("kernel flag: %u\n", flag);
 	if (flag == 0) { // Sphere
 		createSphere(radius, positions, gid, nbParticles);
 	} else if (flag == 1) { // Cube

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/10 14:34:50 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/11 11:35:36 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,7 @@ class ParticleSystem {
 		ParticleSystem &operator=(const ParticleSystem &other) = delete;
 
 		void createBuffers();
+		void releaseBuffers();
 		void registerInterop();
 		void createKernel();
 		void setKernel(const std::string &);
@@ -93,8 +94,7 @@ class ParticleSystem {
 		void setSpeed(int speed) { _speed = speed; };
 
 		size_t getNPart() const { return _nbParticle; };
-		void setNbPart(int num) { _nbParticle = num; _radius = std::cbrt(static_cast<float>(_nbParticle)) * 0.5;
-			createBuffers(); };
+		void setNbPart(int);
 
 		bool& getColorMode() { return _colorMode; };
 		void setColorMode(bool mode) { _colorMode = mode; };

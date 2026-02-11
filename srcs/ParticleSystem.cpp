@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/10 14:34:55 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/11 12:28:58 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ ParticleSystem::~ParticleSystem() {
 
 void ParticleSystem::createBuffers() {
 	// Number of particles, each particle stores 4 float, a vect4(x, y, z, w)
+	std::cout << "Nombre de particule = " << _nbParticle << std::endl;
 	const std::size_t bufferSize = _nbParticle * sizeof(float) * 4;
 
 	glGenBuffers(1, &_posBuffer); 				// 1 is for the number of buffer object
@@ -89,14 +90,18 @@ void ParticleSystem::registerInterop() {
 	};
     
     cl_int err;
-    _clContext = clCreateContext(properties, 1, &device, nullptr, nullptr, &err);
-    if (err != CL_SUCCESS) throw openClError("Failed to create OpenCL context with GL sharing");
+	if (!_clContext) {
+		_clContext = clCreateContext(properties, 1, &device, nullptr, nullptr, &err);
+		if (err != CL_SUCCESS) throw openClError("Failed to create OpenCL context with GL sharing");
+	}
 
 	
 	// Create OpenCl memory object from GL Buffers
 	// This makes VRAM buffers visible to OpenCL
 	_clPosBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _posBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create position buffer\033[0m");
+	if (!_clPosBuffer)
+	    std::cout << "clPosBuffer is null" << std::endl;
 
 	_clVelBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _velBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create velocity buffer\033[0m");
@@ -108,7 +113,6 @@ void ParticleSystem::registerInterop() {
 	// clQueue is a mailman: aquires buffer, launches kernel and releases GL buffers
 	_clQueue = clCreateCommandQueue(_clContext, device, 0, &err);
 	if (err != CL_SUCCESS) throw openClError("Failed to create OpenCL command queue");
-
 }
 
 void ParticleSystem::createKernel() {
@@ -162,7 +166,6 @@ void ParticleSystem::setKernel(const std::string &shape) {
 	err |= clSetKernelArg(_initShape, 6, sizeof(cl_mem), &_clGravityBuffer);
 	err |= clSetKernelArg(_initShape, 7, sizeof(cl_uint), &nGravityPoints);
 	err |= clSetKernelArg(_initShape, 8, sizeof(cl_uint), &_speed);
-
 	if (err != CL_SUCCESS)
 		throw openClError("   \033[33mFailed to set kernel init arguments\033[0m");
 }
@@ -318,4 +321,55 @@ void ParticleSystem::setGravity(bool gravityEnable) {
 		}
 	}
 	updateGravityBuffer();
+}
+
+void ParticleSystem::setNbPart(int num) {
+	_nbParticle = num;
+	_radius = std::cbrt(static_cast<float>(_nbParticle)) * 0.5;
+	releaseBuffers();
+	createBuffers();
+	registerInterop();
+	updateGravityBuffer();
+	setupRendering();
+}
+
+void ParticleSystem::releaseBuffers() {
+	clFinish(_clQueue);
+
+	// OpenCl buffer, always first !
+	if (_clPosBuffer) {
+		clReleaseMemObject(_clPosBuffer);
+		_clPosBuffer = nullptr;
+	}
+
+	if (_clVelBuffer) {
+		clReleaseMemObject(_clVelBuffer);
+		_clVelBuffer = nullptr;
+	}
+
+	if (_clColBuffer) {
+		clReleaseMemObject(_clColBuffer);
+		_clColBuffer = nullptr;
+	}
+
+	if (_clGravityBuffer) {
+		clReleaseMemObject(_clGravityBuffer);
+		_clGravityBuffer = nullptr;
+	}
+
+	// OpenGl buffer
+	if (_posBuffer) {
+		glDeleteBuffers(1, &_posBuffer);
+		_posBuffer = 0;
+	}
+
+	if (_velBuffer) {
+		glDeleteBuffers(1, &_velBuffer);
+		_velBuffer = 0;
+	}
+
+	if (_colorBuffer) {
+		glDeleteBuffers(1, &_colorBuffer);
+		_colorBuffer = 0;
+	}
 }
