@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/11 12:20:56 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/11 18:55:33 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,14 +18,14 @@ ImGuiLayer::ImGuiLayer() {}
 ImGuiLayer::~ImGuiLayer() {}
 
 ImGuiLayer::ImGuiLayer(const ImGuiLayer &other) {
-    *this = other;
+	*this = other;
 }
 
 ImGuiLayer &ImGuiLayer::operator=(const ImGuiLayer &other) {
-    if (this != &other) {
-        // copy attributes here
-    }
-    return *this;
+	if (this != &other) {
+		// copy attributes here
+	}
+	return *this;
 }
 
 // Initialize ImGui context and setup for GLFW and OpenGL
@@ -65,6 +65,9 @@ void ImGuiLayer::render(ParticleSystem& system, CameraMode& cameraMode, CameraOr
 static int editingIndex = -1;
 
 void ImGuiLayer::renderPS(ParticleSystem& system) {
+
+	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "General information");
+	ImGui::Text("			Radius: %f, ", system.getRadius()); ImGui::SameLine();
 	auto& gPoint = system.getGravityPoint();
 	ImGui::Text("Gravity Centers: %d / 8", system.getNGravityPos());
 
@@ -86,7 +89,6 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 		if (ImGui::Button(("Remove##" + std::to_string(i)).c_str())) {
 			// gPoint.erase(gPoint.begin() + i);
 			system.removeGravityPoint(i);
-			std::cout << "Removed gravity point at index " << i << std::endl;
 			if (editingIndex == i) editingIndex = -1;
 			continue;
 		}
@@ -131,60 +133,20 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 		}
 	}
 
+	static bool gravityEnable = 0;
 	static float newPos[4] = {0.f, 0.f, 0.f, 0.f};
 	ImGui::InputFloat4("New gravity position and mass", newPos);
 
 	if (ImGui::Button("Add gravity center")) {
-		system.addGravityPoint(newPos[0], newPos[1], newPos[2], newPos[3]);
+		system.addGravityPoint(newPos[0], newPos[1], newPos[2], newPos[3], gravityEnable);
 	}
-
 	
-	static bool gravityEnable = 0;
 	if (ImGui::Checkbox("Enable Gravity", &gravityEnable)) {
 		system.setGravity(gravityEnable);
 	}
 
-
-	// static int uiPartCount = 0;
-	// static bool nChange = false;
-	// if (ImGui::SliderInt("Particle count", &uiPartCount, 1, 5000000))
-	// 	nChange = true;
-		
-	// static bool resetShpere = false, resetCube = false, resetPyramid = false;
-	// if (ImGui::Checkbox("Sphere", &resetShpere)) resetCube = false, resetPyramid = false;
-	// ImGui::SameLine();
-	// if (ImGui::Checkbox("Cube", &resetCube)) resetShpere = false, resetPyramid = false;
-	// ImGui::SameLine();
-	// if (ImGui::Checkbox("Pyramid", &resetPyramid)) resetShpere = false, resetCube = false;
-	
-	// static bool initSpeed_1 = false, initSpeed_2 = false;
-	// if (ImGui::Checkbox("Speed 1", &initSpeed_1)) initSpeed_2 = false;
-	// ImGui::SameLine();
-	// if (ImGui::Checkbox("Speed 2", &initSpeed_2)) initSpeed_1 = false;
-
-
-	// ImGui::Button("Reset Particles");
-	// if (ImGui::IsItemClicked() && (resetShpere || resetCube || resetPyramid) && (initSpeed_1 || initSpeed_2)) {
-	// 	system.setSpeed(initSpeed_1 ? 1 : 2);
-	// 	if (nChange) {
-	// 		system.setNbPart(uiPartCount);
-	// 		nChange = false;
-	// 	}
-	// 	if (resetShpere) {
-	// 		system.initializeShape("sphere");
-	// 		resetShpere = false;
-	// 	}else if (resetCube) {
-	// 		system.initializeShape("cube");
-	// 		resetCube = false;
-	// 	}else {
-	// 		system.initializeShape("pyramid");
-	// 		resetPyramid = false;
-	// 	}
-	// 	initSpeed_1 = initSpeed_2 = false;
-	// }
-
 	static int  uiPartCount = system.getNPart();
-	static int  uiShape = 0;   // 0 sphere, 1 cube, 2 pyramid
+	static int  uiShape = system.getShape();   // 0 sphere, 1 cube, 2 pyramid
 	static int  uiSpeed = 1;
 
 	ImGui::SliderInt("Particle count", &uiPartCount, 1, 5'000'000);
@@ -193,8 +155,8 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	ImGui::RadioButton("Cube",     &uiShape, 1); ImGui::SameLine();
 	ImGui::RadioButton("Pyramid",  &uiShape, 2);
 
-	ImGui::RadioButton("Speed 1", &uiSpeed, 1); ImGui::SameLine();
-	ImGui::RadioButton("Speed 2", &uiSpeed, 2);
+	ImGui::RadioButton("Explosion", &uiSpeed, 1); ImGui::SameLine();
+	ImGui::RadioButton("Solar system", &uiSpeed, 2);
 
 
 	if (ImGui::Button("Reset Particles")) {
@@ -209,14 +171,12 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	}
 
 	
-	static bool color1 = true, color2 = false;
-	if (ImGui::Checkbox("Color 1", &color1)) color2 = false;
-	ImGui::SameLine();
-	if (ImGui::Checkbox("Color 2", &color2)) color1 = false;
-	if (color1) {
-		system.setColorMode(0);
-	} else if (color2) {
-		system.setColorMode(1);
+	static int uiColor = 0;
+	ImGui::RadioButton("Color 1", &uiColor, 0); ImGui::SameLine();
+	ImGui::RadioButton("Color 2", &uiColor, 1);
+	switch (uiColor) {
+		case 0: system.setColorMode(0); break;
+		case 1: system.setColorMode(1); break;
 	}
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 

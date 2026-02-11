@@ -8,12 +8,12 @@ struct GravityPoint {
 };
 
 float hash(uint x) {
-    x ^= x >> 16;
-    x *= 0x7feb352d;
-    x ^= x >> 15;
-    x *= 0x846ca68b;
-    x ^= x >> 16;
-    return (float)x / (float)UINT_MAX;
+	x ^= x >> 16;
+	x *= 0x7feb352d;
+	x ^= x >> 15;
+	x *= 0x846ca68b;
+	x ^= x >> 16;
+	return (float)x / (float)UINT_MAX;
 }
 
 void createSphere(float radius, float4* positions, size_t gid, uint n) {
@@ -39,10 +39,9 @@ void createCube(float baseCube, float4* positions, size_t gid) {
 	positions[gid] = (float4)(x, y, z, 1.0f);
 }
 
-void createPyramid(float4* positions, size_t gid, const uint n) {
+void createPyramid(float4* positions, size_t gid, const uint n, float baseSize) {
 	uint layers = 20;
-	float baseSize = 1.0;
-	float height = 5.0;
+	float height = baseSize;
 
 	uint particlesPerLayer = n / layers;
 	uint layer = gid / particlesPerLayer;
@@ -172,9 +171,9 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 							+ dirNorm * orbitalSpeed * radialFactor;
 			
 			totalVel += velocity;
+			velocities[gid].xyz = totalVel;
 		}
 		
-		velocities[gid].xyz = totalVel;
 	}
 }
 
@@ -191,14 +190,12 @@ __kernel void initShape(
 	size_t gid = get_global_id(0);
 	if (gid >= nbParticles) return;
 
-    if (gid == 0)
-        printf("kernel flag: %u\n", flag);
 	if (flag == 0) { // Sphere
 		createSphere(radius, positions, gid, nbParticles);
 	} else if (flag == 1) { // Cube
 		createCube(radius, positions, gid);
 	} else if (flag == 2) { // Pyramide
-		createPyramid(positions, gid, nbParticles);
+		createPyramid(positions, gid, nbParticles, radius);
 	}
 	
 	initSpeed(positions, velocities, gid, gPoint, nGravityPoint, nbParticles, flag, speed);

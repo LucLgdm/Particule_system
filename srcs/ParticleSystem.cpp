@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/11 12:28:58 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/11 18:51:07 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 // Constructeur
 ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.0f), _nbParticle(num) {
+	_shape = (shape == "sphere") ? 0 : 1;
 	createBuffers();			// glGenBuffers && glBufferData
 	registerInterop();			// clCreateFromGLBuffer
 	createKernel();				// GPU Kernel
@@ -27,7 +28,7 @@ ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.
 
 ParticleSystem::~ParticleSystem() {
 	if (_initShape) clReleaseKernel(_initShape);
-    if (_updateSys) clReleaseKernel(_updateSys);
+	if (_updateSys) clReleaseKernel(_updateSys);
 	// if (_clProgram) clReleaseProgram(_clProgram);
 	// if (_clPosBuffer) clReleaseMemObject(_clPosBuffer);
 	// if (_clVelBuffer) clReleaseMemObject(_clVelBuffer);
@@ -39,7 +40,6 @@ ParticleSystem::~ParticleSystem() {
 
 void ParticleSystem::createBuffers() {
 	// Number of particles, each particle stores 4 float, a vect4(x, y, z, w)
-	std::cout << "Nombre de particule = " << _nbParticle << std::endl;
 	const std::size_t bufferSize = _nbParticle * sizeof(float) * 4;
 
 	glGenBuffers(1, &_posBuffer); 				// 1 is for the number of buffer object
@@ -73,7 +73,7 @@ void ParticleSystem::registerInterop() {
 	clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, nullptr);
 
 	// Create context with OpenGL sharing
-    cl_context_properties properties[] = {
+	cl_context_properties properties[] = {
 		#ifdef __APPLE__
 				CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
 				(cl_context_properties)CGLGetShareGroup(CGLGetCurrentContext()),
@@ -88,8 +88,8 @@ void ParticleSystem::registerInterop() {
 		#endif
 				0
 	};
-    
-    cl_int err;
+	
+	cl_int err;
 	if (!_clContext) {
 		_clContext = clCreateContext(properties, 1, &device, nullptr, nullptr, &err);
 		if (err != CL_SUCCESS) throw openClError("Failed to create OpenCL context with GL sharing");
@@ -100,9 +100,6 @@ void ParticleSystem::registerInterop() {
 	// This makes VRAM buffers visible to OpenCL
 	_clPosBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _posBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create position buffer\033[0m");
-	if (!_clPosBuffer)
-	    std::cout << "clPosBuffer is null" << std::endl;
-
 	_clVelBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _velBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create velocity buffer\033[0m");
 
@@ -118,8 +115,8 @@ void ParticleSystem::registerInterop() {
 void ParticleSystem::createKernel() {
 	// Take the .cl file
 	std::ifstream file("./srcs/kernels.cl");
-	 if (!file.is_open())
-        throw openClError("Failed to open kernels.cl");
+	if (!file.is_open())
+		throw openClError("Failed to open kernels.cl");
 	
 	std::string src((std::istreambuf_iterator<char>(file)),
 					std::istreambuf_iterator<char>());
@@ -136,7 +133,7 @@ void ParticleSystem::createKernel() {
 
 	err = clBuildProgram(_clProgram, 1, &device, nullptr, nullptr, nullptr);
 	if (err != CL_SUCCESS) {
-    // Get build log
+	// Get build log
 		size_t log_size;
 		clGetProgramBuildInfo(_clProgram, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &log_size);
 		std::vector<char> log(log_size);
@@ -191,7 +188,6 @@ void ParticleSystem::initializeShape(const std::string& shape) {
 	_updateSys = clCreateKernel(_clProgram, "updateSpace", &err);
 	if (err != CL_SUCCESS)
 		throw openClError("    \033[33mFailed to create kernel\033[0m");
-	// std::cout << "\033[32mudpateSpace Kernel set succeffully !\033[0m" << std::endl;
 
 	// 3 Launch kernel
 	size_t local = 128;
@@ -276,10 +272,11 @@ void ParticleSystem::update(float dt) {
 
 
 // Gravity Point Management
-void ParticleSystem::addGravityPoint(float x, float y, float z, float m) {
+void ParticleSystem::addGravityPoint(float x, float y, float z, float m, bool gravity) {
 	if (_GravityCenter.size() >= 8)
 		return;
 	_GravityCenter.emplace_back(x, y, z, 1.0f, m);
+	if (gravity) _GravityCenter.back().active = true;
 	_nGravityPos = static_cast<int>(_GravityCenter.size());
 	updateGravityBuffer();
 }

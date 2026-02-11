@@ -6,14 +6,14 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/10 09:36:26 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/13 15:32:49 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/11 16:21:38 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Application.hpp"
 
 int main(int argc, char **argv) {
-	// std::cout << "Hello Particule" << std::endl;
+	std::cout << "\033[33mHello Particle\033[0m" << std::endl;
 	Application app;
 	try {
 		app.init(argc, argv);
