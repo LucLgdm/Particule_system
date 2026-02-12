@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/12 10:19:57 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/12 11:13:42 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,6 +117,7 @@ class ParticleSystem {
 		int _nGravityPos = 0;
 		bool _colorMode = false;
 		int _speed = 0;
+		float _time = 0.0f;
 
 		std::vector<GravityPoint> _GravityCenter;
 

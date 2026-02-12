@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/12 10:56:12 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/12 11:15:03 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -226,7 +226,8 @@ void ParticleSystem::render() {
 	glBindVertexArray(0);
 }
 
-void ParticleSystem::update(float dt) {	
+void ParticleSystem::update(float dt) {
+	_time += dt;
 	// 1 Aquiring OpenGl buffers
 	cl_int err;
 	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
@@ -240,12 +241,13 @@ void ParticleSystem::update(float dt) {
 	cl_uint nb = static_cast<cl_uint>(_nbParticle);
 	err |= clSetKernelArg(_updateSys, 3, sizeof(cl_uint), &nb);
 	err |= clSetKernelArg(_updateSys, 4, sizeof(float), &dt);
+	err |= clSetKernelArg(_updateSys, 5, sizeof(float), &_time);
 
 	int nGravityPoints = static_cast<int>(_GravityCenter.size());
-	err |= clSetKernelArg(_updateSys, 5, sizeof(cl_mem), &_clGravityBuffer);
-	err |= clSetKernelArg(_updateSys, 6, sizeof(cl_uint), &nGravityPoints);
+	err |= clSetKernelArg(_updateSys, 6, sizeof(cl_mem), &_clGravityBuffer);
+	err |= clSetKernelArg(_updateSys, 7, sizeof(cl_uint), &nGravityPoints);
 	int color = _colorMode ? 1 : 0;
-	err |= clSetKernelArg(_updateSys, 7, sizeof(cl_uint), &color);
+	err |= clSetKernelArg(_updateSys, 8, sizeof(cl_uint), &color);
 	if (err != CL_SUCCESS) throw openClError("Failed to set kernel updateSpace arguments");
 
 	// 3 Launch kernel
