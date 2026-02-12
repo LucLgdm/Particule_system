@@ -146,6 +146,8 @@ make help     # Affiche règles disponibles
 | A	            |    Gauche       |
 | S	            |    Arrière      |
 | D	            |    Droite       |
+| H				|	 Affiche menu | 
+| F11			|	 Fullscreen	  |
 | Souris        |	 Rotation vue |
 | Scroll Souris	|    Zoom         |
 | Escape        |    Quitter      |

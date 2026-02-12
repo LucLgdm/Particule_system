@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/11 18:55:33 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/12 10:32:52 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,14 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	ImGui::Text("			Radius: %f, ", system.getRadius()); ImGui::SameLine();
 	auto& gPoint = system.getGravityPoint();
 	ImGui::Text("Gravity Centers: %d / 8", system.getNGravityPos());
-
+	
+	static int uiType = 0; // 0 gravity, 1 Lorentz, 2 Curl noise, 3 repulsion
+	ImGui::Text("Physic model:");
+	ImGui::RadioButton("Gravity", &uiType, 0); ImGui::SameLine();
+	ImGui::RadioButton("Lorentz", &uiType, 1); ImGui::SameLine();
+	ImGui::RadioButton("Curl noise", &uiType, 2); ImGui::SameLine();
+	ImGui::RadioButton("Repulsion", &uiType, 3);
+	
 	for (int i = 0; i < gPoint.size(); ++i) {
 		if (gPoint[i].getState())
 			ImGui::TextColored(ImVec4(0,1,0,1),
@@ -82,7 +89,7 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 				gPoint[i].getx(), gPoint[i].gety(), gPoint[i].getz(), gPoint[i].getMass());
 		ImGui::SameLine();
 		if (ImGui::Button(("Toggle##" + std::to_string(i)).c_str())) {
-			gPoint[i].active = (gPoint[i].active == 0) ? 1 : 0;
+			gPoint[i]._active = (gPoint[i]._active == 0) ? 1 : 0;
 			system.updateGravityBuffer();
 		}
 		ImGui::SameLine();
@@ -137,11 +144,11 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	static float newPos[4] = {0.f, 0.f, 0.f, 0.f};
 	ImGui::InputFloat4("New gravity position and mass", newPos);
 
-	if (ImGui::Button("Add gravity center")) {
-		system.addGravityPoint(newPos[0], newPos[1], newPos[2], newPos[3], gravityEnable);
+	if (ImGui::Button("Add center")) {
+		system.addGravityPoint(newPos[0], newPos[1], newPos[2], newPos[3], gravityEnable, uiType);
 	}
 	
-	if (ImGui::Checkbox("Enable Gravity", &gravityEnable)) {
+	if (ImGui::Checkbox("Enable Point", &gravityEnable)) {
 		system.setGravity(gravityEnable);
 	}
 
@@ -156,18 +163,20 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	ImGui::RadioButton("Pyramid",  &uiShape, 2);
 
 	ImGui::RadioButton("Explosion", &uiSpeed, 1); ImGui::SameLine();
-	ImGui::RadioButton("Solar system", &uiSpeed, 2);
+	ImGui::RadioButton("Orbital", &uiSpeed, 2);
 
 
 	if (ImGui::Button("Reset Particles")) {
 		system.setSpeed(uiSpeed);
 		system.setNbPart(uiPartCount);
+		if (uiType != system.getGravityPoint()[0]._type)
+			system.setType(uiType);
 
 		switch (uiShape) {
-				case 0: system.initializeShape("sphere");  break;
-				case 1: system.initializeShape("cube");    break;
-				case 2: system.initializeShape("pyramid"); break;
-			}
+			case 0: system.initializeShape("sphere");  break;
+			case 1: system.initializeShape("cube");    break;
+			case 2: system.initializeShape("pyramid"); break;
+		}
 	}
 
 	

@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/11 18:50:56 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/12 10:19:57 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,16 +39,17 @@
 struct GravityPoint {
 	float _Mass;
 	cl_float4 _Position;
-	uint32_t active; // 1 active, -1 inactive
+	uint32_t _active; // 1 active, -1 inactive
+	int _type; // 0 gravity, 1 Lorentz, 2 Curl noise, 3 repulsion
 
 	GravityPoint();
 	GravityPoint(float x, float y, float z, float w, float m)
-		: _Position{ x, y, z, w }, _Mass(m), active(0) {}
+		: _Position{ x, y, z, w }, _Mass(m), _active(0), _type(0) {}
 
 	float getx() const { return _Position.s[0]; };
 	float gety() const { return _Position.s[1]; };
 	float getz() const { return _Position.s[2]; };
-	bool getState() const { return active; };
+	bool getState() const { return _active; };
 	float getMass() const { return _Mass; };
 
 	void setPos(float pos[4]) {
@@ -95,6 +96,7 @@ class ParticleSystem {
 		
 		void setGravity(bool);
 		void setSpeed(int speed) { _speed = speed; };
+		void setType(int);
 
 		size_t getNPart() const { return _nbParticle; };
 		void setNbPart(int);
@@ -102,7 +104,7 @@ class ParticleSystem {
 		bool& getColorMode() { return _colorMode; };
 		void setColorMode(bool mode) { _colorMode = mode; };
 
-		void addGravityPoint(float, float, float, float, bool);
+		void addGravityPoint(float, float, float, float, bool, int);
 		void removeGravityPoint(int);
 		
 		void updateGravityBuffer();

@@ -5,6 +5,7 @@ struct GravityPoint {
 	float _Mass;
 	float4 _Position;
 	uint active;
+	uint type;
 };
 
 float hash(uint x) {
@@ -201,6 +202,17 @@ __kernel void initShape(
 	initSpeed(positions, velocities, gid, gPoint, nGravityPoint, nbParticles, flag, speed);
 }
 
+// Curl noise helper
+float3 curlNoise(float3 p, float t) {
+    float eps = 0.01f;
+    float3 curl = (float3)(
+        (sin((p.y + eps) * 1.3f + t) * cos(p.z * 0.9f) - sin(p.y * 1.3f + t) * cos((p.z + eps) * 0.9f)) / eps,
+        (sin(p.z * 1.1f + t) * cos((p.x + eps) * 1.2f) - sin((p.z + eps) * 1.1f + t) * cos(p.x * 1.2f)) / eps,
+        (sin((p.x + eps) * 0.8f + t) * cos(p.y * 1.4f) - sin(p.x * 0.8f + t) * cos((p.y + eps) * 1.4f)) / eps
+    );
+    return curl;
+}
+
 // Gravity in space
 __kernel void updateSpace(
 	__global float4* positions,
@@ -216,31 +228,49 @@ __kernel void updateSpace(
 	size_t gid = get_global_id(0);
 	if (gid >= nbParticles) return;
 
-	float3 pos = positions[gid].xyz;
-	float3 vel = velocities[gid].xyz;
-	float3 totalAccel = (float3)(0.0f, 0.0f, 0.0f);
+	float3 pos        = positions[gid].xyz;
+    float3 vel        = velocities[gid].xyz;
+    float3 totalForce = (float3)(0.0f, 0.0f, 0.0f);
 
-	for (uint i = 0; i < nGravityPoint; i++) {
-		if (!gPoint[i].active) continue;
+    for (uint i = 0; i < nGravityPoint; i++) {
+        if (!gPoint[i].active) continue;
 
-		float3 dir = gPoint[i]._Position.xyz - pos;
-		float dist2 = dot(dir, dir) + 0.01f; // epsilon
-		float invDist = rsqrt(dist2);
-		float invDist3 = invDist * invDist * invDist;
+        float3 dir  = gPoint[i]._Position.xyz - pos;
+        float  dist = length(dir) + 0.001f;
+        float3 dirNorm = dir / dist;
 
-		float3 accel = gPoint[i]._Mass * dir * invDist3;
-		totalAccel += accel;
-	}
-	vel += totalAccel * dt;
-	if (length(vel) > 35.0f)
-		vel /= 15.0f;
+        if (gPoint[i].type == 0) {
+            // Gravité classique
+            float dist2    = dist * dist + 0.01f;
+            float invDist  = rsqrt(dist2);
+            float invDist3 = invDist * invDist * invDist;
+            totalForce    += gPoint[i]._Mass * dir * invDist3;
 
-	pos += vel * dt;
-	for(uint i = 0; i < nGravityPoint; i++) {
-		float3 diff = pos - gPoint[i]._Position.xyz;
-		if ( diff.x == 0.0f && diff.y == 0.0f && diff.z == 0.0f)
-			pos += 5.0f;
-	}
+        } else if (gPoint[i].type == 1) {
+            // Lorentz : champ magnétique centré sur le point
+            // B = Mass * direction radiale normalisée
+            float3 B       = dirNorm * gPoint[i]._Mass / (dist * dist + 0.1f);
+            totalForce    += cross(vel, B);
+
+        } else if (gPoint[i].type == 2) {
+            // Turbulence / Curl noise centré sur le point
+            float3 localPos = (pos - gPoint[i]._Position.xyz) * 0.5f;
+            float3 curl     = curlNoise(localPos, dt);
+            float  falloff  = gPoint[i]._Mass / (dist + 1.0f); // Diminue avec la distance
+            totalForce     += curl * falloff;
+
+        } else if (gPoint[i].type == 3) {
+            // Répulsion pure
+            float dist2    = dist * dist + 0.01f;
+            float invDist  = rsqrt(dist2);
+            float invDist3 = invDist * invDist * invDist;
+            totalForce    -= gPoint[i]._Mass * dir * invDist3; // Signe inversé
+        }
+    }
+
+    vel += totalForce * dt;
+    vel *= 0.999f; // Léger amortissement
+    pos += vel * dt;
 
 	// Set colors
 

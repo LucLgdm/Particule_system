@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/11 18:51:07 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/12 10:56:12 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -226,17 +226,6 @@ void ParticleSystem::render() {
 	glBindVertexArray(0);
 }
 
-// void ParticleSystem::acquireGLObjects() {
-// 	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
-// 	clEnqueueAcquireGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
-// }
-
-// void ParticleSystem::releaseGLObjects() {
-// 	cl_mem buffers[] = {_clPosBuffer, _clVelBuffer, _clColBuffer};
-// 	clEnqueueReleaseGLObjects(_clQueue, 3, buffers, 0, nullptr, nullptr);
-// 	clFlush(_clQueue); // push les commandes ; évite blocage implicite côté GL
-// }
-
 void ParticleSystem::update(float dt) {	
 	// 1 Aquiring OpenGl buffers
 	cl_int err;
@@ -272,11 +261,12 @@ void ParticleSystem::update(float dt) {
 
 
 // Gravity Point Management
-void ParticleSystem::addGravityPoint(float x, float y, float z, float m, bool gravity) {
+void ParticleSystem::addGravityPoint(float x, float y, float z, float m, bool gravity, int type) {
 	if (_GravityCenter.size() >= 8)
 		return;
 	_GravityCenter.emplace_back(x, y, z, 1.0f, m);
-	if (gravity) _GravityCenter.back().active = true;
+	if (gravity) _GravityCenter.back()._active = true;
+	_GravityCenter.back()._type = type;
 	_nGravityPos = static_cast<int>(_GravityCenter.size());
 	updateGravityBuffer();
 }
@@ -312,9 +302,9 @@ void ParticleSystem::setGravity(bool gravityEnable) {
 	_gravityEnable = gravityEnable ? 1 : 0;
 	for(auto &gp : _GravityCenter) {
 		if (_gravityEnable == 1) {
-			gp.active = 1;
+			gp._active = 1;
 		} else {
-			gp.active = 0;
+			gp._active = 0;
 		}
 	}
 	updateGravityBuffer();
@@ -328,6 +318,14 @@ void ParticleSystem::setNbPart(int num) {
 	registerInterop();
 	updateGravityBuffer();
 	setupRendering();
+}
+
+void ParticleSystem::setType(int type) {
+	for(auto &gp : _GravityCenter) {
+		gp._type = type;
+	}
+
+	updateGravityBuffer();
 }
 
 void ParticleSystem::releaseBuffers() {
