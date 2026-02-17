@@ -108,77 +108,83 @@ void initSpeed(__global float4* positions, __global float4* velocities, size_t g
 	__global const struct GravityPoint* gPoint, const uint nGravityPoint,
 	const uint nbParticles, const int shapeFlag, uint speed) {
 	
-	if (speed == 1) {
-		// Obtenir la normale de surface
-		float3 normal = getSurfaceNormal(positions[gid], gid, nbParticles, shapeFlag);
-		
-		// Vitesse de base selon la normale
-		float baseSpeed = 1.0f + hash(gid) * 5.0f; // Vitesse entre 1 et 3
-		float3 normalVel = normal * baseSpeed;
-		
-		// Option 1 : Uniquement normale
-		// velocities[gid].xyz = normalVel;
-		
-		// Option 2 : Normale + composante orbitale (mix)
-		float3 orbitalVel = (float3)(0.0f, 0.0f, 0.0f);
-		for(uint i = 0; i < nGravityPoint; i++) {
-			if (!gPoint[i].active) continue;
+	switch (speed) {
+		case 1: {
+			// Obtenir la normale de surface
+			float3 normal = getSurfaceNormal(positions[gid], gid, nbParticles, shapeFlag);
 			
-			float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
-			float dist = length(dir);
-			if (dist < 0.2f) continue;
+			// Vitesse de base selon la normale
+			float baseSpeed = 1.0f + hash(gid) * 5.0f; // Vitesse entre 1 et 5
+			float3 normalVel = normal * baseSpeed;
 			
-			float3 dirNorm = dir / dist;
-			float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
+			// Option 1 : Uniquement normale
+			// velocities[gid].xyz = normalVel;
 			
-			// float3 up = (fabs(dirNorm.y) < 0.9f) ? (float3)(0,1,0) : (float3)(1,0,0);
-			// float3 tangent = normalize(cross(dirNorm, up));
-			// 
-			// orbitalVel += tangent * orbitalSpeed;
+			// Option 2 : Normale + composante orbitale (mix)
+			float3 orbitalVel = (float3)(0.0f, 0.0f, 0.0f);
+			for(uint i = 0; i < nGravityPoint; i++) {
+				if (!gPoint[i].active) continue;
+				
+				float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
+				float dist = length(dir);
+				if (dist < 0.2f) continue;
+				
+				float3 dirNorm = dir / dist;
+				float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
+				
+				// float3 up = (fabs(dirNorm.y) < 0.9f) ? (float3)(0,1,0) : (float3)(1,0,0);
+				// float3 tangent = normalize(cross(dirNorm, up));
+				// 
+				// orbitalVel += tangent * orbitalSpeed;
 
-			float angle = hash(gid ^ (i * 2654435761u)) * 2.0f * PI;
-			float3 randAxis = normalize((float3)(
-				cos(angle),
-				sin(angle * 0.7f + 1.0f),
-				sin(angle)
-			));
-			float3 tangent = normalize(cross(dirNorm, randAxis));
-			
-			orbitalVel += tangent * orbitalSpeed;
+				float angle = hash(gid ^ (i * 2654435761u)) * 2.0f * PI;
+				float3 randAxis = normalize((float3)(
+					cos(angle),
+					sin(angle * 0.7f + 1.0f),
+					sin(angle)
+				));
+				float3 tangent = normalize(cross(dirNorm, randAxis));
+				
+				orbitalVel += tangent * orbitalSpeed;
+			}
+			velocities[gid].xyz = normalVel * 0.7f + orbitalVel * 0.3f;
 		}
-		velocities[gid].xyz = normalVel * 0.7f + orbitalVel * 0.3f;
-	} else if (speed == 2) {
-		float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
-		
-		for(uint i = 0; i < nGravityPoint; i++) {
-			if (!gPoint[i].active) continue;
+		case 2: {
+			float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
 			
-			float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
-			float dist = length(dir);
-			
-			if (dist < 0.2f) continue;
-			
-			float3 dirNorm = dir / dist;
-			float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
-			
-			// Axe aléatoire pour la tangente
-			float angle1 = hash(gid * 2u ^ i) * 2.0f * PI;
-			float angle2 = hash(gid * 3u ^ i) * PI;
-			
-			float3 axis  = normalize((float3)(
-				sin(angle2) * cos(angle1),
-				cos(angle2),
-				sin(angle2) * sin(angle1)
-			));
-			
-			float3 tangent = normalize(cross(dirNorm, axis));
-			
-			// Excentricité légère pour orbites elliptiques (±20%)
-			float eccFactor = 0.85f + hash(gid * 5u ^ i) * 0.3f; // 0.85 à 1.15
-			
-			totalVel += tangent * orbitalSpeed * eccFactor;
+			for(uint i = 0; i < nGravityPoint; i++) {
+				if (!gPoint[i].active) continue;
+				
+				float3 dir = gPoint[i]._Position.xyz - positions[gid].xyz;
+				float dist = length(dir);
+				
+				if (dist < 0.2f) continue;
+				
+				float3 dirNorm = dir / dist;
+				float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
+				
+				// Axe aléatoire pour la tangente
+				float angle1 = hash(gid * 2u ^ i) * 2.0f * PI;
+				float angle2 = hash(gid * 3u ^ i) * PI;
+				
+				float3 axis  = normalize((float3)(
+					sin(angle2) * cos(angle1),
+					cos(angle2),
+					sin(angle2) * sin(angle1)
+				));
+				
+				float3 tangent = normalize(cross(dirNorm, axis));
+				
+				// Excentricité légère pour orbites elliptiques (±20%)
+				float eccFactor = 0.85f + hash(gid * 5u ^ i) * 0.3f; // 0.85 à 1.15
+				
+				totalVel += tangent * orbitalSpeed * eccFactor;
+			}
+			velocities[gid].xyz = totalVel;
 		}
-		velocities[gid].xyz = totalVel;
+		case 3: {
+			velocities[gid] = (float4)(1.0f + hash(gid * 3u) * 3.0f, 0.0f, 0.0f, 0.0f);
+		}
 	}
 }
 

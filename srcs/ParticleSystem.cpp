@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/17 14:20:05 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/17 15:04:25 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.
 	initializeShape(shape);		// Call the first kernel
 
 	_GravityCenter.clear();
-	_GravityCenter.push_back(GravityPoint(30.0f, 10.0f, 0.0f, 1.0f, 300.0f));
+	_GravityCenter.push_back(GravityPoint(50.0f, 50.0f, 25.0f, 1.0f, 300.0f));
 	_nGravityPos = 1;
 	updateGravityBuffer();
 }

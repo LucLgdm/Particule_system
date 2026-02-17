@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/17 14:15:39 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/17 14:42:35 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,7 +166,9 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	ImGui::RadioButton("Pyramid",  &uiShape, 2);
 
 	ImGui::RadioButton("Explosion", &uiSpeed, 1); ImGui::SameLine();
-	ImGui::RadioButton("Orbital", &uiSpeed, 2);
+	ImGui::RadioButton("Orbital", &uiSpeed, 2);   ImGui::SameLine();
+	ImGui::RadioButton("Linear", &uiSpeed, 3);
+	
 
 
 	if (ImGui::Button("Reset Particles")) {
