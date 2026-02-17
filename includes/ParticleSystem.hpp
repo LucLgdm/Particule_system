@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/12 11:13:42 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/17 14:19:08 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,6 +92,7 @@ class ParticleSystem {
 		std::vector<GravityPoint>& getGravityPoint() { return _GravityCenter; }
 
 		float getRadius() const {return _radius; };
+		void setRadius(float r) { _radius = r; };
 		int getShape() const {return _shape; };
 		
 		void setGravity(bool);
@@ -101,8 +102,8 @@ class ParticleSystem {
 		size_t getNPart() const { return _nbParticle; };
 		void setNbPart(int);
 
-		bool& getColorMode() { return _colorMode; };
-		void setColorMode(bool mode) { _colorMode = mode; };
+		int& getColorMode() { return _colorMode; };
+		void setColorMode(int mode) { _colorMode = mode; };
 
 		void addGravityPoint(float, float, float, float, bool, int);
 		void removeGravityPoint(int);
@@ -115,7 +116,7 @@ class ParticleSystem {
 		float _radius;
 		int _gravityEnable = 0;
 		int _nGravityPos = 0;
-		bool _colorMode = false;
+		int _colorMode = 0;
 		int _speed = 0;
 		float _time = 0.0f;
 

@@ -17,7 +17,7 @@ float hash(uint x) {
 	return (float)x / (float)UINT_MAX;
 }
 
-void createSphere(float radius, float4* positions, size_t gid, uint n) {
+void createSphere(float radius, __global float4* positions, size_t gid, uint n) {
 	// Fibonacci repartition on a sphere
 		float u = (float)gid + 0.5f;
 		float v = u / (float)n;
@@ -32,7 +32,7 @@ void createSphere(float radius, float4* positions, size_t gid, uint n) {
 		positions[gid].w = 1.0f;
 }
 
-void createCube(float baseCube, float4* positions, size_t gid) {
+void createCube(float baseCube, __global float4* positions, size_t gid) {
 	float x = (hash(gid * 3u + 0u) * 2.0f - 1.0f) * baseCube / 2.0f;
 	float y = (hash(gid * 3u + 1u) * 2.0f - 1.0f) * baseCube / 2.0f ;
 	float z = (hash(gid * 3u + 2u) * 2.0f - 1.0f) * baseCube / 2.0f ;
@@ -40,7 +40,7 @@ void createCube(float baseCube, float4* positions, size_t gid) {
 	positions[gid] = (float4)(x, y, z, 1.0f);
 }
 
-void createPyramid(float4* positions, size_t gid, const uint n, float baseSize) {
+void createPyramid(__global float4* positions, size_t gid, const uint n, float baseSize) {
 	uint layers = 20;
 	float height = baseSize;
 
@@ -104,7 +104,7 @@ float3 getSurfaceNormal(float4 position, size_t gid, const uint nbParticles, con
 	return normal;
 }
 
-void initSpeed(float4* positions, float4* velocities, size_t gid,
+void initSpeed(__global float4* positions, __global float4* velocities, size_t gid,
 	__global const struct GravityPoint* gPoint, const uint nGravityPoint,
 	const uint nbParticles, const int shapeFlag, uint speed) {
 	
@@ -113,7 +113,7 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 		float3 normal = getSurfaceNormal(positions[gid], gid, nbParticles, shapeFlag);
 		
 		// Vitesse de base selon la normale
-		float baseSpeed = 1.0f + hash(gid) * 3.0f; // Vitesse entre 1 et 3
+		float baseSpeed = 1.0f + hash(gid) * 5.0f; // Vitesse entre 1 et 3
 		float3 normalVel = normal * baseSpeed;
 		
 		// Option 1 : Uniquement normale
@@ -129,10 +129,20 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 			if (dist < 0.2f) continue;
 			
 			float3 dirNorm = dir / dist;
-			float orbitalSpeed = sqrt(gPoint[i]._Mass / dist) * 0.3f;
+			float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
 			
-			float3 up = (fabs(dirNorm.y) < 0.9f) ? (float3)(0,1,0) : (float3)(1,0,0);
-			float3 tangent = normalize(cross(dirNorm, up));
+			// float3 up = (fabs(dirNorm.y) < 0.9f) ? (float3)(0,1,0) : (float3)(1,0,0);
+			// float3 tangent = normalize(cross(dirNorm, up));
+			// 
+			// orbitalVel += tangent * orbitalSpeed;
+
+			float angle = hash(gid ^ (i * 2654435761u)) * 2.0f * PI;
+			float3 randAxis = normalize((float3)(
+				cos(angle),
+				sin(angle * 0.7f + 1.0f),
+				sin(angle)
+			));
+			float3 tangent = normalize(cross(dirNorm, randAxis));
 			
 			orbitalVel += tangent * orbitalSpeed;
 		}
@@ -152,29 +162,23 @@ void initSpeed(float4* positions, float4* velocities, size_t gid,
 			float orbitalSpeed = sqrt(gPoint[i]._Mass / dist);
 			
 			// Axe aléatoire pour la tangente
-			float angle1 = hash(gid * 2u) * 2.0f * PI;
-			float angle2 = hash(gid * 2u + 1u) * PI * 0.5f;
+			float angle1 = hash(gid * 2u ^ i) * 2.0f * PI;
+			float angle2 = hash(gid * 3u ^ i) * PI;
 			
-			float3 axis = (float3)(
+			float3 axis  = normalize((float3)(
 				sin(angle2) * cos(angle1),
 				cos(angle2),
 				sin(angle2) * sin(angle1)
-			);
+			));
 			
 			float3 tangent = normalize(cross(dirNorm, axis));
 			
-			// IMPORTANT : Ajouter une composante radiale aléatoire
-			float radialFactor = (hash(gid * 3u) * 2.0f - 1.0f) * 0.3f; // -0.3 à +0.3
-			float tangentialFactor = 0.7f + hash(gid * 4u) * 0.6f; // 0.7 à 1.3
+			// Excentricité légère pour orbites elliptiques (±20%)
+			float eccFactor = 0.85f + hash(gid * 5u ^ i) * 0.3f; // 0.85 à 1.15
 			
-			// Vitesse = composante tangentielle + composante radiale
-			float3 velocity = tangent * orbitalSpeed * tangentialFactor 
-							+ dirNorm * orbitalSpeed * radialFactor;
-			
-			totalVel += velocity;
-			velocities[gid].xyz = totalVel;
+			totalVel += tangent * orbitalSpeed * eccFactor;
 		}
-		
+		velocities[gid].xyz = totalVel;
 	}
 }
 
@@ -242,7 +246,8 @@ __kernel void updateSpace(
 
 		float3 dir  = gPoint[i]._Position.xyz - pos;
 		float  dist = length(dir);
-		float3 dirNorm = (dist > 0.0001f) ? (dir / dist) : (float3)(0.0f, 1.0f, 0.0f);
+		// float3 dirNorm = (dist > 0.0001f) ? (dir / dist) : (float3)(0.0f, 1.0f, 0.0f);
+		float3 dirNorm = dir / dist;
 
 		if (gPoint[i].type == 0) {
 			// Gravité classique
@@ -251,19 +256,25 @@ __kernel void updateSpace(
 				continue;
 			}
 
-			float dist2    = dist * dist + SOFTENING * SOFTENING;
+			// float dist2    = dist * dist + SOFTENING * SOFTENING;
+			// float dist2    = dist * dist + 0.001f;
+			// float invDist  = rsqrt(dist2);
+			// float invDist3 = invDist * invDist * invDist;
+			// totalForce    += gPoint[i]._Mass * dirNorm * invDist3;
+
+			float dist2    = dot(dir, dir) + 0.01f; // epsilon
 			float invDist  = rsqrt(dist2);
 			float invDist3 = invDist * invDist * invDist;
-			totalForce    += gPoint[i]._Mass * dirNorm * invDist3;
+			totalForce    += gPoint[i]._Mass * dir * invDist3;
 
 		} else if (gPoint[i].type == 1) {
 			// Lorentz : champ magnétique centré sur le point
 			if (dist < CAPTURE_RADIUS) {
-                vel *= 0.80f;
-                continue;
-            }
-            float3 B    = dirNorm * gPoint[i]._Mass / (dist * dist + SOFTENING);
-            totalForce += cross(vel, B);
+				vel *= 0.80f;
+				continue;
+			}
+			float3 B    = dirNorm * gPoint[i]._Mass / (dist * dist + SOFTENING);
+			totalForce += cross(vel, B);
 
 		} else if (gPoint[i].type == 2) {
 			// Turbulence / Curl noise centré sur le point
@@ -275,58 +286,72 @@ __kernel void updateSpace(
 		} else if (gPoint[i].type == 3) {
 			// Répulsion pure
 			if (dist < CAPTURE_RADIUS) {
-                vel *= 0.80f;
-                continue;
-            }
-            float dist2    = dist * dist + SOFTENING * SOFTENING;
-            float invDist  = rsqrt(dist2);
-            float invDist3 = invDist * invDist * invDist;
-            totalForce    -= gPoint[i]._Mass * dirNorm * dist * invDist3;
+				vel *= 0.80f;
+				continue;
+			}
+			float dist2    = dist * dist + SOFTENING * SOFTENING;
+			float invDist  = rsqrt(dist2);
+			float invDist3 = invDist * invDist * invDist;
+			totalForce    -= gPoint[i]._Mass * dirNorm * dist * invDist3;
 		}
 	}
 
 	vel += totalForce * dt;
-	vel *= 0.999f; // Léger amortissement
 	pos += vel * dt;
 
 	// Set colors
 
 	float3 color;
-	if (colorMode == 0) {
-		float speed = length(vel);
-		float speedNorm = clamp(speed / 7.0f, 0.0f, 1.0f);
-		speedNorm = speedNorm * speedNorm;  // Courbe quadratique
+	switch (colorMode) {
+		case 0: {
+			float speed = length(vel);
+			float speedNorm = clamp(speed / 7.0f, 0.0f, 1.0f);
+			speedNorm = speedNorm * speedNorm;  // Courbe quadratique
 
-		float3 coldColor = (float3)(0.3f, 0.0f, 0.8f);   // Violet foncé
-		float3 midColor = (float3)(1.0f, 0.2f, 0.6f);    // Rose
-		float3 hotColor = (float3)(1.0f, 0.8f, 0.0f);    // Jaune-orange
+			float3 coldColor = (float3)(0.3f, 0.0f, 0.8f);   // Violet foncé
+			float3 midColor = (float3)(1.0f, 0.2f, 0.6f);    // Rose
+			float3 hotColor = (float3)(1.0f, 0.8f, 0.0f);    // Jaune-orange
 
-		
-		if (speedNorm < 0.5f) {
-			float t = speedNorm * 2.0f;
-			color = mix(coldColor, midColor, t);
-		} else {
-			float t = (speedNorm - 0.5f) * 2.0f;
-			color = mix(midColor, hotColor, t);
+			
+			if (speedNorm < 0.5f) {
+				float t = speedNorm * 2.0f;
+				color = mix(coldColor, midColor, t);
+			} else {
+				float t = (speedNorm - 0.5f) * 2.0f;
+				color = mix(midColor, hotColor, t);
+			}
+			break;
 		}
-	} else {
-		float speed = length(vel);
-		float speedNorm = clamp(speed / 8.0f, 0.0f, 1.0f);
-		speedNorm = 1.0f - exp(-speedNorm * 3.0f);  // Courbe exponentielle inversée
+		case 1: {
+			float speed = length(vel);
+			float speedNorm = clamp(speed / 8.0f, 0.0f, 1.0f);
+			speedNorm = 1.0f - exp(-speedNorm * 3.0f);  // Courbe exponentielle inversée
 
-		// Bleu profond → Bleu clair → Blanc → Jaune → Rouge
-		if (speedNorm < 0.3f) {
-			float t = speedNorm / 0.3f;
-			color = mix((float3)(0.0f, 0.0f, 0.3f), (float3)(0.2f, 0.4f, 1.0f), t);
-		} else if (speedNorm < 0.6f) {
-			float t = (speedNorm - 0.3f) / 0.3f;
-			color = mix((float3)(0.2f, 0.4f, 1.0f), (float3)(1.0f, 1.0f, 0.8f), t);
-		} else {
-			float t = (speedNorm - 0.6f) / 0.4f;
-			color = mix((float3)(1.0f, 1.0f, 0.8f), (float3)(1.0f, 0.1f, 0.0f), t);
+			// Bleu profond → Bleu clair → Blanc → Jaune → Rouge
+			if (speedNorm < 0.3f) {
+				float t = speedNorm / 0.3f;
+				color = mix((float3)(0.0f, 0.0f, 0.3f), (float3)(0.2f, 0.4f, 1.0f), t);
+			} else if (speedNorm < 0.6f) {
+				float t = (speedNorm - 0.3f) / 0.3f;
+				color = mix((float3)(0.2f, 0.4f, 1.0f), (float3)(1.0f, 1.0f, 0.8f), t);
+			} else {
+				float t = (speedNorm - 0.6f) / 0.4f;
+				color = mix((float3)(1.0f, 1.0f, 0.8f), (float3)(1.0f, 0.1f, 0.0f), t);
+			}
+			break;
 		}
+		case 2: {
+			switch (gid % 3) {
+				case 0: color = (float3)(0.3f, 0.6f, 0.9f); break;
+				case 1: color = (float3)(0.9f, 0.3f, 0.3f); break;
+				case 2: color = (float3)(0.3f, 0.9f, 0.3f); break;
+				// case 3: color = (float3)(0.9f, 0.6f, 0.1f); break;
+				// case 4: color = (float3)(0.6f, 0.3f, 0.9f); break;
+			}
+			break;
+		}
+
 	}
-
 	colors[gid].xyz = color;
 	positions[gid].xyz = pos;
 	velocities[gid].xyz = vel;

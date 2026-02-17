@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/12 10:32:52 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/17 14:15:39 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,6 +141,7 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	}
 
 	static bool gravityEnable = 0;
+	static float uiRadius = 0;
 	static float newPos[4] = {0.f, 0.f, 0.f, 0.f};
 	ImGui::InputFloat4("New gravity position and mass", newPos);
 
@@ -157,6 +158,8 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	static int  uiSpeed = 1;
 
 	ImGui::SliderInt("Particle count", &uiPartCount, 1, 5'000'000);
+	ImGui::InputFloat("Radius", &uiRadius);
+		
 
 	ImGui::RadioButton("Sphere",   &uiShape, 0); ImGui::SameLine();
 	ImGui::RadioButton("Cube",     &uiShape, 1); ImGui::SameLine();
@@ -169,6 +172,7 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	if (ImGui::Button("Reset Particles")) {
 		system.setSpeed(uiSpeed);
 		system.setNbPart(uiPartCount);
+		system.setRadius(uiRadius);
 		if (uiType != system.getGravityPoint()[0]._type)
 			system.setType(uiType);
 
@@ -182,11 +186,10 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	
 	static int uiColor = 0;
 	ImGui::RadioButton("Color 1", &uiColor, 0); ImGui::SameLine();
-	ImGui::RadioButton("Color 2", &uiColor, 1);
-	switch (uiColor) {
-		case 0: system.setColorMode(0); break;
-		case 1: system.setColorMode(1); break;
-	}
+	ImGui::RadioButton("Color 2", &uiColor, 1); ImGui::SameLine();
+	ImGui::RadioButton("Color 3", &uiColor, 2);
+	
+	system.setColorMode(uiColor);
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
 		1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

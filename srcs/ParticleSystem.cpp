@@ -6,14 +6,14 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/12 11:15:03 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/17 14:20:05 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ParticleSystem.hpp"
 
 // Constructeur
-ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.0f), _nbParticle(num) {
+ParticleSystem::ParticleSystem(size_t num, const std::string& shape): _radius(5.0f), _nbParticle(num), _clContext(0) {
 	_shape = (shape == "sphere") ? 0 : 1;
 	createBuffers();			// glGenBuffers && glBufferData
 	registerInterop();			// clCreateFromGLBuffer
@@ -100,6 +100,7 @@ void ParticleSystem::registerInterop() {
 	// This makes VRAM buffers visible to OpenCL
 	_clPosBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _posBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create position buffer\033[0m");
+	
 	_clVelBuffer = clCreateFromGLBuffer(_clContext, CL_MEM_READ_WRITE, _velBuffer, &err);
 	if (err != CL_SUCCESS) throw openClError("   \033[33mFailed to create velocity buffer\033[0m");
 
@@ -246,8 +247,7 @@ void ParticleSystem::update(float dt) {
 	int nGravityPoints = static_cast<int>(_GravityCenter.size());
 	err |= clSetKernelArg(_updateSys, 6, sizeof(cl_mem), &_clGravityBuffer);
 	err |= clSetKernelArg(_updateSys, 7, sizeof(cl_uint), &nGravityPoints);
-	int color = _colorMode ? 1 : 0;
-	err |= clSetKernelArg(_updateSys, 8, sizeof(cl_uint), &color);
+	err |= clSetKernelArg(_updateSys, 8, sizeof(cl_uint), &_colorMode);
 	if (err != CL_SUCCESS) throw openClError("Failed to set kernel updateSpace arguments");
 
 	// 3 Launch kernel

@@ -6,7 +6,7 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/18 10:18:17 by lde-merc          #+#    #+#              #
-#    Updated: 2026/02/09 10:47:52 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/02/16 15:36:12 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,7 +32,7 @@ OBJGLAD  = $(OBJDIR)/glad.o
 DEP      = $(OBJ:.o=.d)
 
 # Target executable
-NAME     = Particule_system
+NAME     = Particle_system
 
 
 all: $(NAME) ## Build the project
