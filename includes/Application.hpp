@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/01/26 12:15:30 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/18 15:07:40 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ class Application {
 		void initShader();
 		void run();
 		void cleanup();
+		
 
 		glm::mat4 getViewMatrix() const {
 			if (_cameraMode == CameraMode::FPS)
@@ -63,6 +64,7 @@ class Application {
 		}
 		void handleFps();
 		void handleKey();
+		void handleMouseGravityPoint();
 
 		// Public members for callback access
 		CameraMode		_cameraMode = CameraMode::ORBIT;
@@ -89,6 +91,7 @@ class Application {
 		int _windowedHeight = HEIGHT;
 		int _currentWidth = WIDTH;
 		int _currentHeight = HEIGHT;
+		int _mouseGravityIndex = -1;
 		AxisGizmo	_axisGizmo;
 		
 		void checkinput(int, char**);

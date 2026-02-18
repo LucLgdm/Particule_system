@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/17 14:19:08 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/18 16:21:12 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,6 +109,7 @@ class ParticleSystem {
 		void removeGravityPoint(int);
 		
 		void updateGravityBuffer();
+		void updatePositionGP(int, float, float, float, float);
 		
 	private:
 		int _shape; // 0 sphere, 1 cube, 2 pyramid
