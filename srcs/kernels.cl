@@ -110,6 +110,9 @@ void initSpeed(__global float4* positions, __global float4* velocities, size_t g
 	
 	switch (speed) {
 		case 1: {
+			velocities[gid].xyz = (float3)(0.0f, 0.0f, 0.0f); break;
+		}
+		case 2: {
 			// Obtenir la normale de surface
 			float3 normal = getSurfaceNormal(positions[gid], gid, nbParticles, shapeFlag);
 			
@@ -147,9 +150,10 @@ void initSpeed(__global float4* positions, __global float4* velocities, size_t g
 				
 				orbitalVel += tangent * orbitalSpeed;
 			}
-			velocities[gid].xyz = normalVel * 0.7f + orbitalVel * 0.3f;
+			velocities[gid].xyz = (normalVel * 0.7f + orbitalVel * 0.3f) * 0.8f;
+			break;
 		}
-		case 2: {
+		case 3: {
 			float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
 			
 			for(uint i = 0; i < nGravityPoint; i++) {
@@ -181,9 +185,11 @@ void initSpeed(__global float4* positions, __global float4* velocities, size_t g
 				totalVel += tangent * orbitalSpeed * eccFactor;
 			}
 			velocities[gid].xyz = totalVel;
+			break ;
 		}
-		case 3: {
+		case 4: {
 			velocities[gid] = (float4)(1.0f + hash(gid * 3u) * 3.0f, 0.0f, 0.0f, 0.0f);
+			break ;
 		}
 	}
 }

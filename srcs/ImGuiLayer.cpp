@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/17 14:42:35 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/18 18:04:12 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,7 +141,6 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	}
 
 	static bool gravityEnable = 0;
-	static float uiRadius = 0;
 	static float newPos[4] = {0.f, 0.f, 0.f, 0.f};
 	ImGui::InputFloat4("New gravity position and mass", newPos);
 
@@ -153,30 +152,37 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 		system.setGravity(gravityEnable);
 	}
 
+	// Variables ImGui
 	static int  uiPartCount = system.getNPart();
-	static int  uiShape = system.getShape();   // 0 sphere, 1 cube, 2 pyramid
-	static int  uiSpeed = 1;
+	static int  uiShape     = system.getShape();   // 0 sphere, 1 cube, 2 pyramid
+	static int  uiSpeed     = 1;
+	static float uiRadius   = system.getRadius();
 
-	ImGui::SliderInt("Particle count", &uiPartCount, 1, 5'000'000);
-	ImGui::InputFloat("Radius", &uiRadius);
-		
+	// Slider & widgets avec retour booléen
+	bool partChanged   = ImGui::SliderInt("Particle count", &uiPartCount, 1, 3'500'000);
+	bool radiusChanged = ImGui::SliderFloat("Radius", &uiRadius, 1, 250);
 
-	ImGui::RadioButton("Sphere",   &uiShape, 0); ImGui::SameLine();
-	ImGui::RadioButton("Cube",     &uiShape, 1); ImGui::SameLine();
-	ImGui::RadioButton("Pyramid",  &uiShape, 2);
+	bool shapeChanged = false;
+	if (ImGui::RadioButton("Sphere",  &uiShape, 0)) shapeChanged = true; ImGui::SameLine();
+	if (ImGui::RadioButton("Cube",    &uiShape, 1)) shapeChanged = true; ImGui::SameLine();
+	if (ImGui::RadioButton("Pyramid", &uiShape, 2)) shapeChanged = true;
 
-	ImGui::RadioButton("Explosion", &uiSpeed, 1); ImGui::SameLine();
-	ImGui::RadioButton("Orbital", &uiSpeed, 2);   ImGui::SameLine();
-	ImGui::RadioButton("Linear", &uiSpeed, 3);
-	
+	bool speedChanged = false;
+	speedChanged |= ImGui::RadioButton("Static",    &uiSpeed, 1); ImGui::SameLine();
+	speedChanged |= ImGui::RadioButton("Explosion", &uiSpeed, 2); ImGui::SameLine();
+	speedChanged |= ImGui::RadioButton("Orbital",   &uiSpeed, 3); ImGui::SameLine();
+	speedChanged |= ImGui::RadioButton("Linear",    &uiSpeed, 4);
 
+	// Type de gravité
+	bool typeChanged = false;
+	if (uiType != system.getGravityPoint()[0]._type) typeChanged = true;
 
-	if (ImGui::Button("Reset Particles")) {
-		system.setSpeed(uiSpeed);
-		system.setNbPart(uiPartCount);
-		system.setRadius(uiRadius);
-		if (uiType != system.getGravityPoint()[0]._type)
-			system.setType(uiType);
+	// Si une valeur a changé, update directement
+	if (partChanged || radiusChanged || shapeChanged || speedChanged || typeChanged) {
+		if (speedChanged)  system.setSpeed(uiSpeed);
+		if (partChanged)   system.setNbPart(uiPartCount);
+		if (radiusChanged) system.setRadius(uiRadius);
+		if (typeChanged)   system.setType(uiType);
 
 		switch (uiShape) {
 			case 0: system.initializeShape("sphere");  break;

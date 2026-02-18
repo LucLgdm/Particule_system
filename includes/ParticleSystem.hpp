@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/18 16:21:12 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/18 17:46:06 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,11 +91,12 @@ class ParticleSystem {
 		const std::vector<GravityPoint>& getGravityPoint() const { return _GravityCenter; }
 		std::vector<GravityPoint>& getGravityPoint() { return _GravityCenter; }
 
-		float getRadius() const {return _radius; };
+		float getRadius() const { return _radius; };
 		void setRadius(float r) { _radius = r; };
-		int getShape() const {return _shape; };
+		int getShape() const { return _shape; };
 		
 		void setGravity(bool);
+		int getSpeed() const { return _speed; };
 		void setSpeed(int speed) { _speed = speed; };
 		void setType(int);
 
