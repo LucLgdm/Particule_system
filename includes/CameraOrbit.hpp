@@ -50,6 +50,11 @@ class CameraOrbit {
 				3000.0f
 			);
 		}
+
+		glm::vec3 getTarget() const { return _target; };
+		float getLastX() const { return _lastX; };
+		float getLastY() const { return _lastY; };
+
 	private:
 		// Orbite
 		glm::vec3 _target;

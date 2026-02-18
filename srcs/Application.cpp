@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:47 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/11 19:09:25 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/18 16:30:22 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -291,6 +291,8 @@ void Application::handleKey() {
 		}
 	}
 	escPressed = escNow;
+
+	handleMouseGravityPoint();
 }
 
 void Application::toggleFullscreen() {
@@ -325,5 +327,80 @@ void Application::toggleFullscreen() {
 		glViewport(0, 0, _windowedWidth, _windowedHeight);
 		_cameraFps.updateProjectionMatrix(_windowedWidth, _windowedHeight); // Reset camera to update aspect ratio
 		_cameraOrbit.updateProjectionMatrix(_windowedWidth, _windowedHeight); // Reset camera to update aspect ratio
+	}
+}
+
+void Application::handleMouseGravityPoint() {
+	static bool mPressed = false;
+
+	if (glfwGetKey(_window, GLFW_KEY_M) == GLFW_PRESS) {
+		if (!mPressed) {
+			mPressed = true;
+
+			if (_mouseGravityIndex == -1) {
+				// Crée un nouveau point de gravité
+				float d = glm::distance(_cameraOrbit.getPosition(), _cameraOrbit.getTarget());
+				glm::vec3 forward = glm::normalize(_cameraOrbit.getTarget() - _cameraOrbit.getPosition());
+				glm::vec3 refPoint = _cameraOrbit.getPosition() + forward * d;
+
+				float mx = _cameraOrbit.getLastX();
+				float my = _cameraOrbit.getLastY();
+				float nx = (2.0f * mx) / WIDTH - 1.0f;
+				float ny = 1.0f - (2.0f * my) / HEIGHT;
+
+				glm::vec4 clipCoords(nx, ny, -1.0f, 1.0f);
+				glm::vec4 eyeCoords = glm::inverse(_cameraOrbit.getProjectionMatrix()) * clipCoords;
+				eyeCoords.z = -1.0f; eyeCoords.w = 0.0f;
+
+				glm::vec3 rayDir = glm::normalize(glm::vec3(glm::inverse(_cameraOrbit.getViewMatrix()) * eyeCoords));
+				glm::vec3 rayOrigin = _cameraOrbit.getPosition();
+
+				float denom = glm::dot(forward, rayDir);
+				if (fabs(denom) > 0.0001f) {
+					float t = glm::dot(refPoint - rayOrigin, forward) / denom;
+					glm::vec3 intersectPos = rayOrigin + t * rayDir;
+
+					// On ajoute le GravityPoint et on garde son index
+					std::vector<GravityPoint> gp = _system->getGravityPoint();
+					int type = gp[0]._type;
+					_system->addGravityPoint(intersectPos.x, intersectPos.y, intersectPos.z, 300.0f, true, type);
+					_mouseGravityIndex = _system->getNGravityPos() - 1;
+				}
+			} else {
+				// Supprime le point existant
+				_system->removeGravityPoint(_mouseGravityIndex);
+				_mouseGravityIndex = -1;
+			}
+		}
+	} else {
+		mPressed = false; // reset du toggle
+	}
+
+	// If the gp exists, it has to follow the mouse 
+	if (_mouseGravityIndex != -1) {
+		float d = glm::distance(_cameraOrbit.getPosition(), glm::vec3(0.0f, 0.0f, 0.0f));
+		glm::vec3 forward = glm::normalize(_cameraOrbit.getTarget() - _cameraOrbit.getPosition());
+		glm::vec3 refPoint = _cameraOrbit.getPosition() + forward * d;
+
+		float mx = _cameraOrbit.getLastX();
+		float my = _cameraOrbit.getLastY();
+		float nx = (2.0f * mx) / _currentWidth - 1.0f;
+		float ny = 1.0f - (2.0f * my) / _currentHeight;
+
+		glm::vec4 clipCoords(nx, ny, -1.0f, 1.0f);
+		glm::vec4 eyeCoords = glm::inverse(_cameraOrbit.getProjectionMatrix()) * clipCoords;
+		eyeCoords.z = -1.0f; eyeCoords.w = 0.0f;
+
+		glm::vec3 rayDir = glm::normalize(glm::vec3(glm::inverse(_cameraOrbit.getViewMatrix()) * eyeCoords));
+		glm::vec3 rayOrigin = _cameraOrbit.getPosition();
+
+		float denom = glm::dot(forward, rayDir);
+		if (fabs(denom) > 0.0001f) {
+			float t = glm::dot(refPoint - rayOrigin, forward) / denom;
+			glm::vec3 intersectPos = rayOrigin + t * rayDir;
+
+			// Upadating the position
+			_system->updatePositionGP(_mouseGravityIndex, intersectPos.x, intersectPos.y, intersectPos.z, 400.0f);
+		}
 	}
 }
