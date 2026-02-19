@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:34 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/17 14:19:08 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/19 17:21:19 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "exception.hpp"
+#include "Exception.hpp"
 
 
 struct GravityPoint {

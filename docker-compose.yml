@@ -1,0 +1,14 @@
+services:
+  builder:
+    build: .
+    container_name: opengl_builder
+    volumes:
+      - .:/project                        # ton code source
+      - build_cache:/root/.cache          # cache pour eviter reinstalls
+    working_dir: /project
+    # Pas besoin d'acces GPU ici : on compile seulement
+    # L'execution se fait sur la machine hote
+
+volumes:
+  build_cache:
+    driver: local
