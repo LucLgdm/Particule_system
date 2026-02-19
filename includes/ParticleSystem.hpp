@@ -33,7 +33,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "exception.hpp"
+#include "Exception.hpp"
 
 
 struct GravityPoint {

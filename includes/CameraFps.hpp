@@ -17,7 +17,7 @@
 
 struct GLFWwindow;
 
-#include "global.hpp"
+#include "Global.hpp"
 
 class CameraFps {
 	public:

@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "exception.hpp"
+#include "Exception.hpp"
 #include "ParticleSystem.hpp"
 #include "ImGuiLayer.hpp"
 #include "AxisGizmo.hpp"

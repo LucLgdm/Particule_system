@@ -6,23 +6,24 @@
 #    By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/18 10:18:17 by lde-merc          #+#    #+#              #
-#    Updated: 2026/02/16 15:36:12 by lde-merc         ###   ########.fr        #
+#    Updated: 2026/02/19 17:12:24 by lde-merc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 # Compiler
 CPP      = g++
-FLAGS    = -MMD -g -std=c++17 -I includes/ -I$(HOME)/local/include -I includes/backends/
-LDFLAGS  = -L/usr/lib/x86_64-linux-gnu -l:libOpenCL.so.1 -lglfw -lGL
+FLAGS    = -MMD -g -std=c++17 -I includes/ -I includes/backends/
+LDFLAGS     = -lGL -lGLU -lglfw -lGLEW -lOpenCL
+
+# Docker
+COMPOSE     = docker compose
+SERVICE     = builder
 
 # Sources
 vpath %.cpp srcs/ srcs/imGui/
 vpath %.c srcs/
 
-SRC      = main.cpp Application.cpp ParticleSystem.cpp CameraFps.cpp ImGuiLayer.cpp \
-		   CameraOrbit.cpp AxisGizmo.cpp \
-		   imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp imgui_impl_glfw.cpp \
-		   imgui_impl_opengl3.cpp imgui.cpp
+SRC      = $(wildcard srcs/*.cpp srcs/imGui/*.cpp)
 SRCC     = glad.c
 
 # Object directories
@@ -34,8 +35,40 @@ DEP      = $(OBJ:.o=.d)
 # Target executable
 NAME     = Particle_system
 
+# ─── Regles HOST (lancent le docker) ─────────────────────────────────────────
 
-all: $(NAME) ## Build the project
+all: ## Build the project
+	$(COMPOSE) run --rm $(SERVICE) make _build
+
+clean: ## Clean object files via docker
+	$(COMPOSE) run --rm $(SERVICE) make _clean
+
+
+fclean: clean ## Clean object files and executable and docker volumes
+	@rm -f $(NAME)
+	$(COMPOSE) run --rm $(SERVICE) make _clean
+	$(COMPOSE) down --volumes --rmi local
+	$(COMPOSE) rm -f
+	@echo "\033[35mDeleted everything!\033[0m"
+	
+re: fclean all ## Rebuild
+	@echo "\033[33mRebuild done!\033[0m"
+
+
+val: all ## Run with Valgrind
+	valgrind --leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=definite \
+		./$(NAME) resources/42.obj || true
+
+
+help: ## Display the help
+	@awk 'BEGIN {FS = ":.*##"} \
+		/^[a-zA-Z_-]+:.*##/ { \
+			printf "\033[34m  %-10s\033[0m \033[32m%s\033[0m\n", $$1, $$2 \
+		}' $(MAKEFILE_LIST)
+
+# ─── Regles INTERNES (appelees dans le container) ────────────────────────────
+
+_build: $(NAME) ## Compile and link in the container
 
 # Link
 $(NAME): $(OBJ) $(OBJGLAD)
@@ -52,34 +85,16 @@ $(OBJDIR)/glad.o: $(SRCC)
 	@mkdir -p $(@D)
 	@$(CPP) $(FLAGS) -c $< -o $@
 
-
-clean: ## Clean object files
+_clean: ## Clean object files in the container
 	@rm -rf $(OBJDIR)
-	@echo "\033[34mDeleted object files!\033[0m"
 	@rm imgui.ini || true 
+	@echo "\033[34mDeleted object files!\033[0m"
 
-
-fclean: clean ## Clean object files + executable
+_fclean: _clean ## Clean object and executable in the container
 	@rm -f $(NAME)
-	@echo "\033[35mDeleted everything!\033[0m"
-
-
-re: fclean all ## Rebuild
-	@echo "\033[33mRebuild done!\033[0m"
-
-
-val: all ## Run with Valgrind
-	valgrind --leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=definite ./$(NAME) resources/42.obj || true
-
-
-help: ## Display the help
-	@awk 'BEGIN {FS = ":.*##"} \
-		/^[a-zA-Z_-]+:.*##/ { \
-			printf "  %-10s %s\n", $$1, $$2 \
-		}' $(MAKEFILE_LIST)
-
+	
 # Include dependencies
 -include $(DEP)
 
 # Phony targets
-.PHONY: all clean fclean re help val
+.PHONY: all clean fclean re help val _build _clean _fclean

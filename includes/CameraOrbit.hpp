@@ -15,7 +15,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-#include "global.hpp"
+#include "Global.hpp"
 
 #include <map>
 
