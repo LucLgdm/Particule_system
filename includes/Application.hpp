@@ -40,6 +40,7 @@ class Application {
 		void initShader();
 		void run();
 		void cleanup();
+		
 
 		glm::mat4 getViewMatrix() const {
 			if (_cameraMode == CameraMode::FPS)
@@ -63,6 +64,7 @@ class Application {
 		}
 		void handleFps();
 		void handleKey();
+		void handleMouseGravityPoint();
 
 		// Public members for callback access
 		CameraMode		_cameraMode = CameraMode::ORBIT;
@@ -89,6 +91,7 @@ class Application {
 		int _windowedHeight = HEIGHT;
 		int _currentWidth = WIDTH;
 		int _currentHeight = HEIGHT;
+		int _mouseGravityIndex = -1;
 		AxisGizmo	_axisGizmo;
 		
 		void checkinput(int, char**);

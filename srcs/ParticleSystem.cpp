@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/17 15:04:25 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/18 16:22:24 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -369,4 +369,10 @@ void ParticleSystem::releaseBuffers() {
 		glDeleteBuffers(1, &_colorBuffer);
 		_colorBuffer = 0;
 	}
+}
+
+void ParticleSystem::updatePositionGP(int id, float x, float y, float z, float m) {
+	float pos[4] = {x, y, z, m};
+	_GravityCenter[id].setPos(pos);
+	updateGravityBuffer();
 }

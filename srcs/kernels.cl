@@ -347,12 +347,21 @@ __kernel void updateSpace(
 			break;
 		}
 		case 2: {
-			switch (gid % 3) {
-				case 0: color = (float3)(0.3f, 0.6f, 0.9f); break;
-				case 1: color = (float3)(0.9f, 0.3f, 0.3f); break;
-				case 2: color = (float3)(0.3f, 0.9f, 0.3f); break;
-				// case 3: color = (float3)(0.9f, 0.6f, 0.1f); break;
-				// case 4: color = (float3)(0.6f, 0.3f, 0.9f); break;
+			float dist = INT_MAX;
+			for(uint i = 0; i < nGravityPoint; i++) {
+				float3 dir  = gPoint[i]._Position.xyz - pos;
+				dist = min(dist, length(dir));
+
+				int sw = dist / 20;
+				switch (sw) {
+					case 0: color = (float3)(1.0f, 0.0f, 0.0f); break;
+					case 1: color = (float3)(0.8f, 0.0f, 0.2f); break;
+					case 2: color = (float3)(0.6f, 0.0f, 0.4f); break;
+					case 3: color = (float3)(0.4f, 0.0f, 0.6f); break;
+					case 4: color = (float3)(0.2f, 0.0f, 0.8f); break;
+					case 5: color = (float3)(0.0f, 0.0f, 1.0f); break;
+					default: color = (float3)(fabs(sin(time)), 0.0f, cos(time) * cos(time)); break;
+				}
 			}
 			break;
 		}

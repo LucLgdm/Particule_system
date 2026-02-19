@@ -109,6 +109,7 @@ class ParticleSystem {
 		void removeGravityPoint(int);
 		
 		void updateGravityBuffer();
+		void updatePositionGP(int, float, float, float, float);
 		
 	private:
 		int _shape; // 0 sphere, 1 cube, 2 pyramid
