@@ -2,9 +2,9 @@
 
 Un moteur de simulation de particules **haute-performance** utilisant **OpenGL**, **OpenCL** et **ImGui**. Simule des milliers de particules soumises à la gravité avec rendu 3D temps réel et interface de contrôle interactive.
 
-> **Langage** : C++ (88.8%) + C (11.2%)  
+> **Langage** : C++  
 > **État** : Stable  
-> **Dernière mise à jour** : Janvier 2026
+> **Dernière mise à jour** : February 2026
 
 ---
 
@@ -15,7 +15,7 @@ Un moteur de simulation de particules **haute-performance** utilisant **OpenGL**
 - Caméras multiples : modes FPS et Orbit commutables à la volée
 - Interface ImGui : ajout et configuration de points de gravité en temps réel
 - Interopérabilité OpenGL / OpenCL : buffers partagés et synchronisation explicite
-- Simulation physique : gravité multi-points, initialisation sphérique (Fibonacci sphere)
+- Simulation physique : gravité multi-points, initialisation sphérique, cubique, pyramidale
 
 ---
 
@@ -26,23 +26,28 @@ Un moteur de simulation de particules **haute-performance** utilisant **OpenGL**
 Particule_system/
 ├── includes/                    # Headers (.hpp)
 │   ├── Application.hpp          # Boucle principale
-│   ├── ParticleSystem.hpp       # Gestion GPU buffers
+│   ├── AxisGuizmo.hpp			 # Axes de l'espace
+│   ├── CameraFps.hpp       	 # Vue FPS
+│   ├── CameraOrbit.hpp     	 # Vue orbite
+│   ├── Exception.hpp			 # Exceptions custom
+│   ├── Global.hpp				 # Global data
 │   ├── ImGuiLayer.hpp           # UI debug
-│   ├── Camera/
-│   │   ├── CameraFps.hpp        # Vue FPS
-│   │   └── CameraOrbit.hpp      # Vue orbite
-│   ├── exception.hpp            # Exceptions custom
-│   └── glm/                     # Librairie mathématiques
+│   ├── ParticleSystem.hpp       # Gestion GPU buffers
+|   ├── backends				 # Librairie ImGui
+|   ├── glad					 # OpenGl loader
+│   ├── glm/                     # Librairie mathématiques
+|   └── KHR						 # Librairie pour shader
 │
 ├── srcs/                        # Sources (.cpp)
 │   ├── main.cpp                 # Entry point
 │   ├── Application.cpp
-│   ├── ParticleSystem.cpp
+│   ├── AxisGizmo.cpp
+│   ├── CameraFps.cpp
+│   ├── CameraOrbit.cpp
+│   ├── glad.c
 │   ├── ImGuiLayer.cpp
+│   ├── ParticleSystem.cpp
 │   ├── kernels.cl               # KERNELS OPENCL
-│   ├── Camera/
-│   │   ├── CameraFps.cpp
-│   │   └── CameraOrbit.cpp
 │   └── imGui/                   # ImGui implementation
 │
 ├── shaders/                     # Shaders GLSL
@@ -50,6 +55,8 @@ Particule_system/
 │   └── fragment.glsl            # Fragment shader
 │
 ├── Makefile                     # Build system
+├── docker-compose.yml			 # Docker config
+├── dockerfile					 # Launch docker
 ├── README.md                    # Ce fichier
 └── en.subject.pdf               # Sujet du projet
 
@@ -106,29 +113,12 @@ Particule_system/
 | **GLM** | - | Mathématiques vecteurs/matrices |
 | **ImGui** | - | Interface utilisateur |
 
-### Installation (Ubuntu/Debian)
-
+### 🔨 Compilation
+Docker compose is needed
 ```bash
-sudo apt-get update
-sudo apt-get install -y \
-  build-essential \
-  libglfw3-dev libglfw3 \
-  libgles2-mesa-dev \
-  ocl-icd-libopencl1 opencl-headers \
-  mesa-utils
-
-clinfo  # Affiche info GPU et plateforme OpenCL
-```
-
-### 🔨 Compilation & Installation
-```bash
-make          # Compilation avec flags C++17
-make clean    # Supprime fichiers objets (.o)
-make fclean   # Supprime tout (objets + exécutable)
-make re       # Rebuild complet
-
-make val      # Compilation + exécution avec Valgrind (détection fuites)
-make help     # Affiche règles disponibles
+# The docker installs all the necessary libraries
+make			# Launch docker, compile the project and the quit docker
+make help		# Print the detail of all rules you need
 ```
 
 ## 🚀 Utilisation
@@ -146,7 +136,9 @@ make help     # Affiche règles disponibles
 | A	            |    Gauche       |
 | S	            |    Arrière      |
 | D	            |    Droite       |
-| H				|	 Affiche menu | 
+| Q	            |    Haut         |
+| E	            |    Bas	      |
+| H				|	 Affiche menu |
 | F11			|	 Fullscreen	  |
 | Souris        |	 Rotation vue |
 | Scroll Souris	|    Zoom         |

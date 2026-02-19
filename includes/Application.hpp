@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:42:54 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/18 15:07:40 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/19 17:21:22 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "exception.hpp"
+#include "Exception.hpp"
 #include "ParticleSystem.hpp"
 #include "ImGuiLayer.hpp"
 #include "AxisGizmo.hpp"
