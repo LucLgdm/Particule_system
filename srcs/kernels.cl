@@ -188,7 +188,7 @@ void initSpeed(__global float4* positions, __global float4* velocities, size_t g
 			break ;
 		}
 		case 4: {
-			velocities[gid] = (float4)(1.0f + hash(gid * 3u) * 3.0f, 0.0f, 0.0f, 0.0f);
+			velocities[gid] = (float4)(3.0f, 0.0f, 0.0f, 0.0f);
 			break ;
 		}
 	}
@@ -250,7 +250,7 @@ __kernel void updateSpace(
 	float3 totalForce = (float3)(0.0f, 0.0f, 0.0f);
 
 	#define SOFTENING       0.2f
-	#define MAX_SPEED       30.0f
+	#define MAX_SPEED       15.0f
 	#define CAPTURE_RADIUS  0.5f
 
 	for (uint i = 0; i < nGravityPoint; i++) {
@@ -309,6 +309,8 @@ __kernel void updateSpace(
 	}
 
 	vel += totalForce * dt;
+	float speed = length(vel);
+	if (speed > MAX_SPEED) vel.xyz *= MAX_SPEED / speed;
 	pos += vel * dt;
 
 	// Set colors
@@ -366,7 +368,7 @@ __kernel void updateSpace(
 					case 3: color = (float3)(0.4f, 0.0f, 0.6f); break;
 					case 4: color = (float3)(0.2f, 0.0f, 0.8f); break;
 					case 5: color = (float3)(0.0f, 0.0f, 1.0f); break;
-					default: color = (float3)(fabs(sin(time)), 0.0f, cos(time) * cos(time)); break;
+					default: color = (float3)(fabs(sin(time)), fabs(cos(time) * sin(time)), fabs(cos(time))); break;
 				}
 			}
 			break;

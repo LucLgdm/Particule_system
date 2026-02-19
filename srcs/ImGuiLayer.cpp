@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/09 14:18:57 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/18 18:04:12 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/19 11:43:23 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,11 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	ImGui::RadioButton("Lorentz", &uiType, 1); ImGui::SameLine();
 	ImGui::RadioButton("Curl noise", &uiType, 2); ImGui::SameLine();
 	ImGui::RadioButton("Repulsion", &uiType, 3);
+	// Type de gravité
+	bool typeChanged = false;
+	if (uiType != system.getGravityPoint()[0]._type) typeChanged = true;
+	if (typeChanged)   system.setType(uiType);
+	
 	
 	for (int i = 0; i < gPoint.size(); ++i) {
 		if (gPoint[i].getState())
@@ -173,16 +178,12 @@ void ImGuiLayer::renderPS(ParticleSystem& system) {
 	speedChanged |= ImGui::RadioButton("Orbital",   &uiSpeed, 3); ImGui::SameLine();
 	speedChanged |= ImGui::RadioButton("Linear",    &uiSpeed, 4);
 
-	// Type de gravité
-	bool typeChanged = false;
-	if (uiType != system.getGravityPoint()[0]._type) typeChanged = true;
 
 	// Si une valeur a changé, update directement
-	if (partChanged || radiusChanged || shapeChanged || speedChanged || typeChanged) {
+	if (partChanged || radiusChanged || shapeChanged || speedChanged) {
 		if (speedChanged)  system.setSpeed(uiSpeed);
 		if (partChanged)   system.setNbPart(uiPartCount);
 		if (radiusChanged) system.setRadius(uiRadius);
-		if (typeChanged)   system.setType(uiType);
 
 		switch (uiShape) {
 			case 0: system.initializeShape("sphere");  break;
