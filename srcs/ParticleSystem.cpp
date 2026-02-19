@@ -6,7 +6,7 @@
 /*   By: lde-merc <lde-merc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 15:40:39 by lde-merc          #+#    #+#             */
-/*   Updated: 2026/02/18 16:22:24 by lde-merc         ###   ########.fr       */
+/*   Updated: 2026/02/19 16:52:13 by lde-merc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -314,7 +314,6 @@ void ParticleSystem::setGravity(bool gravityEnable) {
 
 void ParticleSystem::setNbPart(int num) {
 	_nbParticle = num;
-	_radius = std::cbrt(static_cast<float>(_nbParticle)) * 0.5;
 	releaseBuffers();
 	createBuffers();
 	registerInterop();

@@ -110,6 +110,9 @@ void initSpeed(__global float4* positions, __global float4* velocities, size_t g
 	
 	switch (speed) {
 		case 1: {
+			velocities[gid].xyz = (float3)(0.0f, 0.0f, 0.0f); break;
+		}
+		case 2: {
 			// Obtenir la normale de surface
 			float3 normal = getSurfaceNormal(positions[gid], gid, nbParticles, shapeFlag);
 			
@@ -147,9 +150,10 @@ void initSpeed(__global float4* positions, __global float4* velocities, size_t g
 				
 				orbitalVel += tangent * orbitalSpeed;
 			}
-			velocities[gid].xyz = normalVel * 0.7f + orbitalVel * 0.3f;
+			velocities[gid].xyz = (normalVel * 0.7f + orbitalVel * 0.3f) * 0.8f;
+			break;
 		}
-		case 2: {
+		case 3: {
 			float3 totalVel = (float3)(0.0f, 0.0f, 0.0f);
 			
 			for(uint i = 0; i < nGravityPoint; i++) {
@@ -181,9 +185,11 @@ void initSpeed(__global float4* positions, __global float4* velocities, size_t g
 				totalVel += tangent * orbitalSpeed * eccFactor;
 			}
 			velocities[gid].xyz = totalVel;
+			break ;
 		}
-		case 3: {
-			velocities[gid] = (float4)(1.0f + hash(gid * 3u) * 3.0f, 0.0f, 0.0f, 0.0f);
+		case 4: {
+			velocities[gid] = (float4)(3.0f, 0.0f, 0.0f, 0.0f);
+			break ;
 		}
 	}
 }
@@ -244,7 +250,7 @@ __kernel void updateSpace(
 	float3 totalForce = (float3)(0.0f, 0.0f, 0.0f);
 
 	#define SOFTENING       0.2f
-	#define MAX_SPEED       30.0f
+	#define MAX_SPEED       15.0f
 	#define CAPTURE_RADIUS  0.5f
 
 	for (uint i = 0; i < nGravityPoint; i++) {
@@ -303,6 +309,8 @@ __kernel void updateSpace(
 	}
 
 	vel += totalForce * dt;
+	float speed = length(vel);
+	if (speed > MAX_SPEED) vel.xyz *= MAX_SPEED / speed;
 	pos += vel * dt;
 
 	// Set colors
@@ -360,7 +368,7 @@ __kernel void updateSpace(
 					case 3: color = (float3)(0.4f, 0.0f, 0.6f); break;
 					case 4: color = (float3)(0.2f, 0.0f, 0.8f); break;
 					case 5: color = (float3)(0.0f, 0.0f, 1.0f); break;
-					default: color = (float3)(fabs(sin(time)), 0.0f, cos(time) * cos(time)); break;
+					default: color = (float3)(fabs(sin(time)), fabs(cos(time) * sin(time)), fabs(cos(time))); break;
 				}
 			}
 			break;
